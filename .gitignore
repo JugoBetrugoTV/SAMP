@@ -1,0 +1,36 @@
+# --- Build-Werkzeuge (von setup.sh erzeugt) ---------------------------------
+.toolchain/
+.build/
+
+# SA-MP-Standardincludes werden von setup.sh geholt und nicht mitgeliefert.
+pawno/include/*.inc
+
+# --- Uebersetztes Gamemode --------------------------------------------------
+gamemodes/*.amx
+filterscripts/*.amx
+
+# --- Serverpaket (proprietaer, nicht Teil des Repositories) -----------------
+samp03svr
+omp-server
+announce
+samp-npc
+config.json
+*.so
+*.so.*
+
+# --- Laufzeitdaten ----------------------------------------------------------
+scriptfiles/accounts/*
+!scriptfiles/accounts/.gitkeep
+scriptfiles/logs/*
+!scriptfiles/logs/.gitkeep
+scriptfiles/bans.ini
+scriptfiles/houses.ini
+server_log.txt
+samp.ban
+crashinfo.txt
+
+# --- Editoren ---------------------------------------------------------------
+*.swp
+*~
+.vscode/
+.idea/
