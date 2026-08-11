@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# UIF Freeroam - Server starten
+# Jebiga-Gaming - Server starten
 #
 # Erwartet das SA-MP-Serverpaket (samp03svr) im Projektverzeichnis.
 # Siehe README.md, Abschnitt "Serverpaket besorgen".
@@ -10,8 +10,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
-if [ ! -f gamemodes/uif.amx ]; then
-    echo "gamemodes/uif.amx fehlt - bitte zuerst ./compile.sh ausfuehren." >&2
+if [ ! -f gamemodes/jebiga.amx ]; then
+    echo "gamemodes/jebiga.amx fehlt - bitte zuerst ./compile.sh ausfuehren." >&2
     exit 1
 fi
 

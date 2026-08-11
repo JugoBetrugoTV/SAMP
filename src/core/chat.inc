@@ -1,14 +1,14 @@
 /*
- * UIF Freeroam - Chat
+ * Jebiga-Gaming - Chat
  *
  * Hauptchat mit Rangfarben, Flood- und Werbeschutz, private Nachrichten sowie
  * getrennte Kanaele fuer Admins und VIPs.
  */
 
-#if defined _uif_chat_included
+#if defined _jebiga_chat_included
     #endinput
 #endif
-#define _uif_chat_included
+#define _jebiga_chat_included
 
 #define CHAT_MIN_INTERVAL       (1200)  // ms zwischen zwei Nachrichten
 #define CHAT_MAX_STRIKES        (4)     // danach automatischer Mute

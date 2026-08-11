@@ -1,15 +1,15 @@
 /*
- * UIF Freeroam - Accountsystem
+ * Jebiga-Gaming - Accountsystem
  *
  * Registrierung und Login ueber Dialoge. Passwoerter werden mit SHA256 und
  * einem zufaelligen Salt pro Account gehasht (SA-MP Native SHA256_PassHash),
  * das Klartextpasswort verlaesst den Dialog nie.
  */
 
-#if defined _uif_account_included
+#if defined _jebiga_account_included
     #endinput
 #endif
-#define _uif_account_included
+#define _jebiga_account_included
 
 /*
  * Wird nach erfolgreichem Login ausgeloest. Die Definition steht im
@@ -78,6 +78,10 @@ stock bool:Account_Load(playerid)
     PlayerData[playerid][pDerbyWins]     = INI_GetInt(path, "DerbyWins");
     PlayerData[playerid][pHouse]         = INI_GetInt(path, "House", -1);
     PlayerData[playerid][pVehicleDamage] = bool:INI_GetInt(path, "VehicleDamage", 1);
+    PlayerData[playerid][pBank]          = INI_GetInt(path, "Bank");
+    PlayerData[playerid][pJobsDone]      = INI_GetInt(path, "JobsDone");
+    PlayerData[playerid][pJobEarnings]   = INI_GetInt(path, "JobEarnings");
+    PlayerData[playerid][pAchievements]  = INI_GetInt(path, "Achievements");
 
     PlayerData[playerid][pRegistered] = true;
     return true;
@@ -126,6 +130,10 @@ stock Account_Save(playerid)
     INI_WriteInt("DerbyWins",        PlayerData[playerid][pDerbyWins]);
     INI_WriteInt("House",            PlayerData[playerid][pHouse]);
     INI_WriteInt("VehicleDamage",    PlayerData[playerid][pVehicleDamage] ? 1 : 0);
+    INI_WriteInt("Bank",             PlayerData[playerid][pBank]);
+    INI_WriteInt("JobsDone",         PlayerData[playerid][pJobsDone]);
+    INI_WriteInt("JobEarnings",      PlayerData[playerid][pJobEarnings]);
+    INI_WriteInt("Achievements",     PlayerData[playerid][pAchievements]);
     INI_Close();
     return 1;
 }

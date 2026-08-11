@@ -1,15 +1,15 @@
 /*
- * UIF Freeroam - Rennen
+ * Jebiga-Gaming - Rennen
  *
  * Immer hoechstens ein Rennen gleichzeitig. Ein Spieler eroeffnet mit /race
  * eine Lobby, andere steigen mit /join ein; nach dem Countdown zaehlen nur
  * noch die Checkpoints. Wer als Erster durchs Ziel faehrt, gewinnt.
  */
 
-#if defined _uif_race_included
+#if defined _jebiga_race_included
     #endinput
 #endif
-#define _uif_race_included
+#define _jebiga_race_included
 
 #define RACE_MAX_CHECKPOINTS    (10)
 #define RACE_LOBBY_TIME         (30)     // Sekunden Wartezeit vor dem Start

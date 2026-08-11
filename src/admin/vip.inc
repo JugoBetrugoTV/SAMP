@@ -1,14 +1,14 @@
 /*
- * UIF Freeroam - VIP
+ * Jebiga-Gaming - VIP
  *
  * Drei Stufen (Bronze, Silber, Gold) mit gestaffelten Vorteilen. Die Stufe
  * vergibt das Team per /setvip; hier stehen nur die Vorteile selbst.
  */
 
-#if defined _uif_vip_included
+#if defined _jebiga_vip_included
     #endinput
 #endif
-#define _uif_vip_included
+#define _jebiga_vip_included
 
 #define VIP_HEAL_COOLDOWN       (60)    // Sekunden zwischen zwei /vheal
 #define VIP_MAX_NAME_COLORS     (8)

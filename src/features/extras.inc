@@ -1,136 +1,110 @@
 /*
- * UIF Freeroam - Tuning, Animationen und Spassbefehle
+ * Jebiga-Gaming - Animationen und Spassbefehle
  *
- * Kleinteile, die auf einem Freeroam-Server erwartet werden: ein Tuningmenue
- * fuer das aktuelle Fahrzeug, ein paar Animationen und Befehle, die vor allem
- * unterhalten sollen.
+ * Der Animationsbrowser arbeitet auf src/data/animations.inc: 1716
+ * Animationen aus 132 Bibliotheken. Ausgewaehlt wird in zwei Schritten -
+ * erst die Bibliothek, dann die Animation - weil beides zusammen in keinen
+ * SA-MP-Dialog passt.
+ *
+ * Die Tabelle ist nach Bibliothek sortiert. Dadurch bilden die Eintraege einer
+ * Bibliothek einen zusammenhaengenden Bereich, den eine einzige Suche nach
+ * Anfang und Ende findet - statt fuer jede Anzeige ueber alle 1716 Zeilen zu
+ * laufen.
  */
 
-#if defined _uif_extras_included
+#if defined _jebiga_extras_included
     #endinput
 #endif
-#define _uif_extras_included
+#define _jebiga_extras_included
 
-// ---------------------------------------------------------------------------
-// Tuning
-//
-// Die Bauteil-IDs stammen aus dem Tuningsystem von GTA San Andreas. Nicht
-// jedes Teil passt an jedes Fahrzeug; AddVehicleComponent ignoriert
-// unpassende Kombinationen stillschweigend, deshalb genuegt hier eine
-// Rueckmeldung ohne eigene Pruefung.
-// ---------------------------------------------------------------------------
-enum E_TUNING
+// Ausgewaehlte Bibliothek steckt in den oberen Bits des Dialogkontexts
+#define ANIMCTX_PACK(%0,%1)     (((%0) << 16) | (%1))
+#define ANIMCTX_LIBRARY(%0)     ((%0) >> 16)
+#define ANIMCTX_PAGE(%0)        ((%0) & 0xFFFF)
+
+/*
+ * Erster Eintrag einer Bibliothek, -1 wenn sie leer ist.
+ */
+static Anim_LibraryStart(library)
 {
-    tuName[28],
-    tuComponent,
-    tuPrice
-};
-
-static const gTuning[][E_TUNING] =
-{
-    {"Nitro (2x)",          1009,  15000},
-    {"Nitro (5x)",          1008,  25000},
-    {"Nitro (10x)",         1010,  40000},
-    {"Hydraulik",           1087,  20000},
-    {"Rennfelgen 'Shadow'", 1075,   8000},
-    {"Rennfelgen 'Mega'",   1080,   8000},
-    {"Rennfelgen 'Grove'",  1085,   8000},
-    {"Rennfelgen 'Twist'",  1084,   8000},
-    {"Spoiler 'Alpha'",     1000,  12000},
-    {"Spoiler 'Champ'",     1001,  12000},
-    {"Auspuff 'Upswept'",   1129,   9000},
-    {"Auspuff 'Twin'",      1132,   9000},
-    {"Dachscheinwerfer",    1087,  10000}
-};
-
-stock Tuning_ShowMenu(playerid)
-{
-    new list[1024], entry[96], price[24];
-
-    for (new i = 0; i < sizeof gTuning; i++)
+    for (new i = 0; i < ANIMATION_COUNT; i++)
     {
-        FormatNumber(gTuning[i][tuPrice], price, sizeof price);
-        format(entry, sizeof entry, "%s%s  %s$%s\n",
-            EC_WHITE, gTuning[i][tuName], EC_YELLOW, price);
+        if (!strcmp(gAnimationInfo[i][aiLibrary], gAnimationLibraries[library], true)) return i;
+    }
+    return -1;
+}
+
+static Anim_LibraryCount(library)
+{
+    new start = Anim_LibraryStart(library);
+    if (start == -1) return 0;
+
+    new count = 0;
+    for (new i = start; i < ANIMATION_COUNT; i++)
+    {
+        if (strcmp(gAnimationInfo[i][aiLibrary], gAnimationLibraries[library], true) != 0) break;
+        count++;
+    }
+    return count;
+}
+
+stock Anim_ShowLibraries(playerid)
+{
+    new list[2048], entry[48];
+
+    for (new i = 0; i < ANIMATION_LIBRARIES; i++)
+    {
+        format(entry, sizeof entry, "%s%s %s(%d)\n",
+            EC_WHITE, gAnimationLibraries[i], EC_GREY, Anim_LibraryCount(i));
+
+        if (strlen(list) + strlen(entry) >= sizeof(list) - 8) break;
         strcat(list, entry);
     }
 
-    return ShowPlayerDialog(playerid, DIALOG_TUNING, DIALOG_STYLE_LIST,
-        "Tuning", list, "Einbauen", "Abbrechen");
+    return ShowPlayerDialog(playerid, DIALOG_ANIM_LIBRARY, DIALOG_STYLE_LIST,
+        "Animationen - Bibliothek", list, "Weiter", "Abbrechen");
 }
 
-static Tuning_Apply(playerid, index)
+stock Anim_ShowPage(playerid, library, page)
 {
-    if (index < 0 || index >= sizeof gTuning) return 0;
+    new total = Anim_LibraryCount(library);
+    if (total == 0) return 0;
 
-    if (!IsPlayerInAnyVehicleAsDriver(playerid))
+    new pages = (total + DIALOG_PAGE_SIZE - 1) / DIALOG_PAGE_SIZE;
+    if (page < 0)      page = pages - 1;
+    if (page >= pages) page = 0;
+
+    PlayerData[playerid][pDialogContext] = ANIMCTX_PACK(library, page);
+
+    new start = Anim_LibraryStart(library);
+    new first = page * DIALOG_PAGE_SIZE;
+    new last  = first + DIALOG_PAGE_SIZE;
+    if (last > total) last = total;
+
+    new list[2048], entry[48];
+    for (new i = first; i < last; i++)
     {
-        SendError(playerid, "Du musst als Fahrer in einem Fahrzeug sitzen.");
-        return 0;
-    }
-    if (GetPlayerMoney(playerid) < gTuning[index][tuPrice])
-    {
-        new price[24], msg[112];
-        FormatNumber(gTuning[index][tuPrice], price, sizeof price);
-        format(msg, sizeof msg, "Dieses Teil kostet $%s.", price);
-        SendError(playerid, msg);
-        return 0;
-    }
-
-    AddVehicleComponent(GetPlayerVehicleID(playerid), gTuning[index][tuComponent]);
-    GivePlayerMoney(playerid, -gTuning[index][tuPrice]);
-
-    new msg[112];
-    format(msg, sizeof msg, "%s eingebaut. Passt das Teil nicht zum Modell, bleibt es wirkungslos.",
-        gTuning[index][tuName]);
-    SendSuccess(playerid, msg);
-    return 1;
-}
-
-// ---------------------------------------------------------------------------
-// Animationen
-// ---------------------------------------------------------------------------
-enum E_ANIM
-{
-    anName[24],
-    anLibrary[20],
-    anAnimation[28],
-    bool:anLoop
-};
-
-static const gAnims[][E_ANIM] =
-{
-    {"Tanzen 1",     "DANCING",  "dnce_M_a",       true},
-    {"Tanzen 2",     "DANCING",  "dnce_M_b",       true},
-    {"Tanzen 3",     "DANCING",  "dnce_M_c",       true},
-    {"Tanzen 4",     "DANCING",  "dnce_M_d",       true},
-    {"Unterhalten",  "PED",      "IDLE_CHAT",      true},
-    {"Sonnen",       "BEACH",    "bather",         true},
-    {"Rappen",       "RAPPING",  "RAP_A_Loop",     true},
-    {"Essen",        "FOOD",     "EAT_Burger",     false},
-    {"Handy",        "PED",      "phone_talk",     true},
-    {"Jubeln",       "RIOT",     "RIOT_ANGRY",     false},
-    {"Hinsetzen",    "PED",      "SEAT_idle",      true},
-    {"Aufgeben",     "PED",      "handsup",        true}
-};
-
-stock Anim_ShowList(playerid)
-{
-    new list[768], entry[64];
-
-    for (new i = 0; i < sizeof gAnims; i++)
-    {
-        format(entry, sizeof entry, "%s%s\n", EC_WHITE, gAnims[i][anName]);
+        format(entry, sizeof entry, "%s%s\n", EC_WHITE, gAnimationInfo[start + i][aiName]);
         strcat(list, entry);
     }
+
+    if (pages > 1)
+    {
+        strcat(list, EC_YELLOW "<< Vorherige Seite\n");
+        strcat(list, EC_YELLOW ">> Naechste Seite\n");
+    }
+
+    new caption[80];
+    format(caption, sizeof caption, "%s - Seite %d von %d",
+        gAnimationLibraries[library], page + 1, pages);
 
     return ShowPlayerDialog(playerid, DIALOG_ANIM_LIST, DIALOG_STYLE_LIST,
-        "Animationen", list, "Abspielen", "Abbrechen");
+        caption, list, "Abspielen", "Zurueck");
 }
 
-static Anim_Play(playerid, index)
+stock Anim_Play(playerid, index)
 {
-    if (index < 0 || index >= sizeof gAnims) return 0;
+    if (index < 0 || index >= ANIMATION_COUNT) return 0;
 
     if (IsPlayerInAnyVehicle(playerid))
     {
@@ -138,35 +112,51 @@ static Anim_Play(playerid, index)
         return 0;
     }
 
-    // Die Animationsbibliothek muss vor dem ersten Abspielen geladen werden
-    ApplyAnimation(playerid, gAnims[index][anLibrary], gAnims[index][anAnimation],
-        4.1, gAnims[index][anLoop], 0, 0, 0, 0, 1);
-    ApplyAnimation(playerid, gAnims[index][anLibrary], gAnims[index][anAnimation],
-        4.1, gAnims[index][anLoop], 0, 0, gAnims[index][anLoop] ? 1 : 0, 0, 1);
+    /*
+     * Der erste Aufruf laedt die Bibliothek beim Spieler nach und laeuft oft
+     * noch ins Leere; der zweite spielt sie dann tatsaechlich ab. Das ist das
+     * uebliche Vorgehen bei SA-MP.
+     */
+    ApplyAnimation(playerid, gAnimationInfo[index][aiLibrary], gAnimationInfo[index][aiName],
+        4.1, 0, 0, 0, 0, 0, 1);
+    ApplyAnimation(playerid, gAnimationInfo[index][aiLibrary], gAnimationInfo[index][aiName],
+        4.1, 1, 0, 0, 1, 0, 1);
 
-    new msg[80];
-    format(msg, sizeof msg, "Animation: %s (beenden mit /stopanim)", gAnims[index][anName]);
+    new msg[112];
+    format(msg, sizeof msg, "Animation: %s / %s  (beenden mit /stopanim)",
+        gAnimationInfo[index][aiLibrary], gAnimationInfo[index][aiName]);
     SendInfo(playerid, msg);
     return 1;
 }
 
-// ---------------------------------------------------------------------------
-// Dialoge
-// ---------------------------------------------------------------------------
 stock Extras_OnDialogResponse(playerid, dialogid, response, listitem)
 {
     switch (dialogid)
     {
-        case DIALOG_TUNING:
+        case DIALOG_ANIM_LIBRARY:
         {
             if (!response) return 1;
-            Tuning_Apply(playerid, listitem);
+            Anim_ShowPage(playerid, listitem, 0);
             return 1;
         }
         case DIALOG_ANIM_LIST:
         {
-            if (!response) return 1;
-            Anim_Play(playerid, listitem);
+            if (!response) { Anim_ShowLibraries(playerid); return 1; }
+
+            new context = PlayerData[playerid][pDialogContext];
+            new library = ANIMCTX_LIBRARY(context);
+            new page    = ANIMCTX_PAGE(context);
+
+            new total = Anim_LibraryCount(library);
+            new first = page * DIALOG_PAGE_SIZE;
+            new last  = first + DIALOG_PAGE_SIZE;
+            if (last > total) last = total;
+            new shown = last - first;
+
+            if (listitem == shown)     { Anim_ShowPage(playerid, library, page - 1); return 1; }
+            if (listitem == shown + 1) { Anim_ShowPage(playerid, library, page + 1); return 1; }
+
+            Anim_Play(playerid, Anim_LibraryStart(library) + first + listitem);
             return 1;
         }
     }
@@ -176,19 +166,38 @@ stock Extras_OnDialogResponse(playerid, dialogid, response, listitem)
 // ---------------------------------------------------------------------------
 // Kommandos
 // ---------------------------------------------------------------------------
-CMD:tune(playerid, params[])
-{
-    #pragma unused params
-    require(IsPlayerInAnyVehicleAsDriver(playerid), "Du musst als Fahrer in einem Fahrzeug sitzen.");
-
-    return Tuning_ShowMenu(playerid);
-}
-ALIAS:tuning(tune)
-
 CMD:anims(playerid, params[])
 {
-    #pragma unused params
-    return Anim_ShowList(playerid);
+    // Ohne Argument der Browser, mit Argument die Suche ueber alle Animationen
+    if (params[0] == EOS) return Anim_ShowLibraries(playerid);
+
+    new found = -1, matches = 0;
+    for (new i = 0; i < ANIMATION_COUNT; i++)
+    {
+        if (strfind(gAnimationInfo[i][aiName], params, true) == -1) continue;
+        found = i;
+        matches++;
+    }
+
+    require(matches != 0, "Keine Animation mit diesem Namen. /anims zeigt alle.");
+
+    if (matches > 1)
+    {
+        new msg[176], list[144], entry[40], shown = 0;
+        for (new i = 0; i < ANIMATION_COUNT && shown < 5; i++)
+        {
+            if (strfind(gAnimationInfo[i][aiName], params, true) == -1) continue;
+            format(entry, sizeof entry, "%s  ", gAnimationInfo[i][aiName]);
+            strcat(list, entry);
+            shown++;
+        }
+        format(msg, sizeof msg, "%d Treffer: %s", matches, list);
+        SendInfo(playerid, msg);
+        return 1;
+    }
+
+    Anim_Play(playerid, found);
+    return 1;
 }
 ALIAS:anim(anims)
 
@@ -197,6 +206,21 @@ CMD:stopanim(playerid, params[])
     #pragma unused params
     ClearAnimations(playerid);
     SendSuccess(playerid, "Animation beendet.");
+    return 1;
+}
+
+CMD:weaponinfo(playerid, params[])
+{
+    require(params[0] != EOS, "Benutzung: /weaponinfo [Waffen-ID oder Name]");
+
+    new weapon = FindWeaponId(params);
+    require(weapon != -2, "Mehrere Waffen passen - bitte genauer angeben.");
+    require(weapon != -1, "Keine Waffe mit diesem Namen oder dieser ID.");
+
+    new msg[144];
+    format(msg, sizeof msg, "%s%s%s - ID %d, Inventarplatz %d",
+        EC_WHITE, GetWeaponNameEx(weapon), EC_CYAN, weapon, GetWeaponSlot(weapon));
+    SendInfo(playerid, msg);
     return 1;
 }
 

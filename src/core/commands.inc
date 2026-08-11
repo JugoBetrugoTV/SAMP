@@ -1,15 +1,15 @@
 /*
- * UIF Freeroam - Allgemeine Kommandos
+ * Jebiga-Gaming - Allgemeine Kommandos
  *
  * Alles, was keinem Fachmodul gehoert: Hilfe, Statistiken, Spielerliste und
  * die rotierenden Servertipps. Wird als letztes Modul eingebunden und darf
  * deshalb auf alle anderen zugreifen.
  */
 
-#if defined _uif_commands_included
+#if defined _jebiga_commands_included
     #endinput
 #endif
-#define _uif_commands_included
+#define _jebiga_commands_included
 
 // ---------------------------------------------------------------------------
 // Rotierende Servertipps
@@ -18,9 +18,14 @@ static const gAnnouncements[][] =
 {
     "Im Fahrzeug die Taste 2 spammen gibt Schub - alles dazu mit /boost.",
     "Tippe /tp fuer ueber 40 Teleportziele quer ueber San Andreas.",
-    "Der UIF Stuntpark hat einen echten Looping: /stuntpark",
+    "Der Jebiga Stuntpark hat einen echten Looping: /stuntpark",
     "/dm fuehrt in die Deathmatch-Arenen, /duel fordert jemanden direkt heraus.",
     "Eigene Crew gruenden und im Chat mit Kuerzel auftreten: /crew",
+    "Geld verdienen ohne Kaempfen: /jobs bringt dich auf sechs Routen.",
+    "Zinsen statt Bargeld herumliegen lassen: /bank",
+    "Ueber 300 Skins zur Auswahl: /skins",
+    "127 Innenraeume von San Andreas stehen offen: /interiors",
+    "20 Erfolge mit Geldpraemien warten: /achievements",
     "Mit /veh [Name] spawnst du jedes Fahrzeug - zum Beispiel /veh infernus.",
     "/race eroeffnet ein Rennen, /derby ein Autoderby. Mitmachen lohnt sich.",
     "Spruenge mit dem Fahrzeug geben Stuntpunkte. /stunt bringt dich zu den besten Rampen.",
@@ -71,6 +76,12 @@ CMD:help(playerid, params[])
     strcat(body, "{F1C40F}Haeuser\n{FFFFFF}\
         /houses  /buyhouse  /sellhouse  /enter  /exit  /myhouse\n\n");
 
+    strcat(body, "{F1C40F}Geld & Arbeit\n{FFFFFF}\
+        /bank  /deposit  /withdraw  /transfer  /jobs  /quitjob  /pay\n\n");
+
+    strcat(body, "{F1C40F}Aussehen & Orte\n{FFFFFF}\
+        /skins  /interiors  /exitint  /anims  /weaponinfo\n\n");
+
     strcat(body, "{F1C40F}Crew\n{FFFFFF}\
         /crew  /crews  /createcrew  /invitecrew  /joincrew  /leavecrew  /c [Text]\n\n");
 
@@ -79,7 +90,7 @@ CMD:help(playerid, params[])
 
     strcat(body, "{F1C40F}Sonstiges\n{FFFFFF}\
         /stats  /players  /top  /pos  /kill  /afk  /rules  /credits  /vip\n\
-        /anims  /stopanim  /rocket  /parachute  /eject  /skin  /pay\n\n");
+        /achievements  /stopanim  /rocket  /parachute  /eject\n\n");
 
     if (AdminLevel(playerid) > ADMIN_NONE)
     {
@@ -140,9 +151,10 @@ CMD:credits(playerid, params[])
 // ---------------------------------------------------------------------------
 stock Stats_Show(playerid, targetid)
 {
-    new playtime[32], money[24], body[1024];
+    new playtime[32], money[24], bank[24], body[1400];
     FormatDuration(GetTotalPlayTime(targetid), playtime, sizeof playtime);
     FormatNumber(GetPlayerMoney(targetid), money, sizeof money);
+    FormatNumber(PlayerData[targetid][pBank], bank, sizeof bank);
 
     // Kill/Death-Verhaeltnis mit einer Nachkommastelle, ohne Division durch null
     new Float:ratio = (PlayerData[targetid][pDeaths] > 0)
@@ -166,6 +178,10 @@ stock Stats_Show(playerid, targetid)
         %sStuntpunkte:%s %d\n\
         %sRennsiege:%s %d\n\
         %sDerbysiege:%s %d\n\
+        %sBoost-Schuebe:%s %d\n\n\
+        %sBankkonto:%s $%s\n\
+        %sJobrouten:%s %d\n\
+        %sErfolge:%s %d von %d\n\
         %sHaus:%s %s\n\n\
         %sSpielzeit:%s %s\n\
         %sRegistriert:%s %s",
@@ -180,6 +196,10 @@ stock Stats_Show(playerid, targetid)
         EC_GREY, EC_CYAN, PlayerData[targetid][pStuntPoints],
         EC_GREY, EC_CYAN, PlayerData[targetid][pRaceWins],
         EC_GREY, EC_CYAN, PlayerData[targetid][pDerbyWins],
+        EC_GREY, EC_CYAN, PlayerData[targetid][pBoostCount],
+        EC_GREY, EC_GREEN, bank,
+        EC_GREY, EC_CYAN, PlayerData[targetid][pJobsDone],
+        EC_GREY, EC_CYAN, Achievement_Count(targetid), ACHIEVEMENT_COUNT,
         EC_GREY, EC_WHITE, houseName,
         EC_GREY, EC_WHITE, playtime,
         EC_GREY, EC_WHITE, PlayerData[targetid][pRegDate]);
@@ -384,19 +404,3 @@ CMD:pay(playerid, params[])
     return 1;
 }
 
-CMD:skin(playerid, params[])
-{
-    require(Params_IsInt(params, 0), "Benutzung: /skin [0-311]");
-
-    new skin = Params_Int(params, 0);
-    require(skin >= 0 && skin <= 311, "Die Skin-ID muss zwischen 0 und 311 liegen.");
-    require(PlayerData[playerid][pMinigame] == MINIGAME_NONE, "Waehrend eines Minispiels kannst du den Skin nicht wechseln.");
-
-    PlayerData[playerid][pSkin] = skin;
-    SetPlayerSkin(playerid, skin);
-
-    new msg[64];
-    format(msg, sizeof msg, "Skin auf %d gewechselt.", skin);
-    SendSuccess(playerid, msg);
-    return 1;
-}

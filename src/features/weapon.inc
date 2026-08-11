@@ -1,14 +1,14 @@
 /*
- * UIF Freeroam - Waffensystem
+ * Jebiga-Gaming - Waffensystem
  *
  * Vorgefertigte Waffensets statt einzelner Waffenkommandos. Manche Sets sind
  * VIPs oder dem Team vorbehalten.
  */
 
-#if defined _uif_weapon_included
+#if defined _jebiga_weapon_included
     #endinput
 #endif
-#define _uif_weapon_included
+#define _jebiga_weapon_included
 
 #define WEAPONS_PER_SET         (6)
 

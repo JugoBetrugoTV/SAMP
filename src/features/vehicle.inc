@@ -1,15 +1,15 @@
 /*
- * UIF Freeroam - Fahrzeuge
+ * Jebiga-Gaming - Fahrzeuge
  *
  * Statische Fahrzeuge an allen wichtigen Punkten der Karte plus ein
  * Spawnkommando fuer eigene Fahrzeuge. Jeder Spieler besitzt hoechstens ein
  * selbst gespawntes Fahrzeug; es verschwindet beim Verlassen des Servers.
  */
 
-#if defined _uif_vehicle_included
+#if defined _jebiga_vehicle_included
     #endinput
 #endif
-#define _uif_vehicle_included
+#define _jebiga_vehicle_included
 
 #define VEHICLE_MODEL_MIN       (400)
 #define VEHICLE_MODEL_MAX       (611)

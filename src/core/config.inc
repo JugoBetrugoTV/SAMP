@@ -1,22 +1,22 @@
 /*
- * UIF Freeroam - Zentrale Konfiguration
+ * Jebiga-Gaming - Zentrale Konfiguration
  *
  * Alle Server-weiten Konstanten, Farben und Dialog-IDs.
  * Wird als erstes Modul eingebunden, damit jedes andere Modul darauf zugreifen kann.
  */
 
-#if defined _uif_config_included
+#if defined _jebiga_config_included
     #endinput
 #endif
-#define _uif_config_included
+#define _jebiga_config_included
 
 // ---------------------------------------------------------------------------
 // Server-Identitaet
 // ---------------------------------------------------------------------------
-#define SERVER_NAME             "UIF - United Islands Freeroam"
+#define SERVER_NAME             "Jebiga-Gaming"
 #define SERVER_VERSION          "1.0.0"
-#define SERVER_WEBSITE          "uifserver.net"
-#define SERVER_DISCORD          "discord.gg/uif"
+#define SERVER_WEBSITE          "jebiga-gaming.net"
+#define SERVER_DISCORD          "discord.gg/jebiga"
 
 // ---------------------------------------------------------------------------
 // Limits
@@ -87,6 +87,15 @@
 #define PATH_BANS               "bans.ini"
 #define PATH_HOUSES             "houses.ini"
 #define PATH_LOG                "logs/server.log"
+#define PATH_CREWS              "crews.ini"
+
+// ---------------------------------------------------------------------------
+// Seitengroesse fuer lange Auswahllisten
+//
+// SA-MP begrenzt den Text eines Dialogs auf gut 4000 Zeichen. Listen mit
+// hunderten Eintraegen - Skins, Animationen - muessen deshalb blaettern.
+// ---------------------------------------------------------------------------
+#define DIALOG_PAGE_SIZE        (40)
 
 // ---------------------------------------------------------------------------
 // Minispiel-Zustaende
@@ -151,5 +160,18 @@ enum
     DIALOG_TUNING,
     DIALOG_ANIM_LIST,
     DIALOG_CREW_MENU,
-    DIALOG_CREW_LIST
+    DIALOG_CREW_LIST,
+    DIALOG_SKIN_CAT,
+    DIALOG_SKIN_LIST,
+    DIALOG_TUNE_CAT,
+    DIALOG_TUNE_LIST,
+    DIALOG_INTERIOR_CAT,
+    DIALOG_INTERIOR_LIST,
+    DIALOG_ANIM_LIBRARY,
+    DIALOG_JOB_LIST,
+    DIALOG_BANK,
+    DIALOG_BANK_DEPOSIT,
+    DIALOG_BANK_WITHDRAW,
+    DIALOG_ACHIEVEMENTS,
+    DIALOG_WEAPON_INFO
 };

@@ -1,5 +1,5 @@
 /*
- * UIF Freeroam - Makros und Kommando-Dispatcher
+ * Jebiga-Gaming - Makros und Kommando-Dispatcher
  *
  * Ein eigener, abhaengigkeitsfreier Ersatz fuer zcmd + sscanf. Kommandos werden
  * als public-Funktionen mit dem Praefix "cmd_" angelegt und aus
@@ -7,10 +7,10 @@
  * Server weder Plugins noch externe Includes.
  */
 
-#if defined _uif_macros_included
+#if defined _jebiga_macros_included
     #endinput
 #endif
-#define _uif_macros_included
+#define _jebiga_macros_included
 
 // ---------------------------------------------------------------------------
 // Kommando-Definition

@@ -1,7 +1,7 @@
 /*
- * UIF Freeroam - Speedboost
+ * Jebiga-Gaming - Speedboost
  *
- * Das Markenzeichen von UIF: wer im Fahrzeug die Taste 2 spammt, bekommt bei
+ * Das Markenzeichen von Jebiga: wer im Fahrzeug die Taste 2 spammt, bekommt bei
  * jedem Druck einen Schub nach vorne. Umgesetzt ueber KEY_SUBMISSION - das ist
  * die Taste, auf der GTA San Andreas standardmaessig die "Sub-Mission" liegt,
  * also die 2 in der Zahlenreihe.
@@ -12,10 +12,10 @@
  * muss man den Vorrat nachladen lassen.
  */
 
-#if defined _uif_boost_included
+#if defined _jebiga_boost_included
     #endinput
 #endif
-#define _uif_boost_included
+#define _jebiga_boost_included
 
 #define BOOST_MAX_ENERGY        (100)
 #define BOOST_COST              (8)      // Energie je Schub

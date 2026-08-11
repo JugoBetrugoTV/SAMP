@@ -1,13 +1,13 @@
 /*
- * UIF Freeroam - Allgemeine Hilfsfunktionen
+ * Jebiga-Gaming - Allgemeine Hilfsfunktionen
  *
  * Nachrichten-Wrapper, Spielersuche, Zeit-/Zahlformatierung und Logging.
  */
 
-#if defined _uif_util_included
+#if defined _jebiga_util_included
     #endinput
 #endif
-#define _uif_util_included
+#define _jebiga_util_included
 
 // Rueckgabewert von FindPlayer, wenn ein Namensfragment auf mehrere Spieler passt
 #define PLAYER_AMBIGUOUS        (-2)

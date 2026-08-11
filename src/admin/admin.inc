@@ -1,15 +1,15 @@
 /*
- * UIF Freeroam - Administration
+ * Jebiga-Gaming - Administration
  *
  * Fuenf Teamstufen von Moderator bis Owner. Jedes Kommando prueft die
  * benoetigte Stufe selbst; alle eingreifenden Aktionen landen im Logfile und
  * im Adminchat, damit Entscheidungen nachvollziehbar bleiben.
  */
 
-#if defined _uif_admin_included
+#if defined _jebiga_admin_included
     #endinput
 #endif
-#define _uif_admin_included
+#define _jebiga_admin_included
 
 // Zelle im LSPD
 #define JAIL_X                  (264.6000)

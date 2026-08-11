@@ -1,15 +1,15 @@
 /*
- * UIF Freeroam - Derby
+ * Jebiga-Gaming - Derby
  *
  * Letzter Fahrer gewinnt. Die Teilnehmer werden im Kreis auf dem verlassenen
  * Flugfeld abgesetzt und in einer eigenen Virtual World gehalten, damit das
  * restliche Freeroam nicht dazwischenfunkt.
  */
 
-#if defined _uif_derby_included
+#if defined _jebiga_derby_included
     #endinput
 #endif
-#define _uif_derby_included
+#define _jebiga_derby_included
 
 #define DERBY_LOBBY_TIME        (40)
 #define DERBY_COUNTDOWN         (5)

@@ -1,5 +1,5 @@
 /*
- * UIF Freeroam - HUD
+ * Jebiga-Gaming - HUD
  *
  * Zwei Textdraws am unteren Bildschirmrand, sichtbar sobald man in einem
  * Fahrzeug sitzt: Geschwindigkeit samt Modellname und darunter der
@@ -10,10 +10,10 @@
  * faehrt - bei vollem Server spart das den Grossteil der Arbeit.
  */
 
-#if defined _uif_hud_included
+#if defined _jebiga_hud_included
     #endinput
 #endif
-#define _uif_hud_included
+#define _jebiga_hud_included
 
 #define HUD_UPDATE_INTERVAL     (400)   // ms
 #define HUD_BAR_SEGMENTS        (12)

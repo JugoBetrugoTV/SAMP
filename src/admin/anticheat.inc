@@ -1,5 +1,5 @@
 /*
- * UIF Freeroam - Anti-Cheat
+ * Jebiga-Gaming - Anti-Cheat
  *
  * Bewusst konservative Heuristiken: lieber ein Cheat unentdeckt als ein
  * ehrlicher Spieler gekickt. Erkannt werden nur Zustaende, die im normalen
@@ -11,10 +11,10 @@
  * kann sie nicht manipulieren, deshalb gibt es dafuer bewusst keine Pruefung.
  */
 
-#if defined _uif_anticheat_included
+#if defined _jebiga_anticheat_included
     #endinput
 #endif
-#define _uif_anticheat_included
+#define _jebiga_anticheat_included
 
 #define AC_MAX_HEALTH           (100.0)
 #define AC_MAX_ARMOUR           (100.0)

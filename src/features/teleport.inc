@@ -1,14 +1,14 @@
 /*
- * UIF Freeroam - Teleportsystem
+ * Jebiga-Gaming - Teleportsystem
  *
  * Kern eines Freeroam-Servers: schnelle Wege zu allen interessanten Orten der
  * Karte. Die Ziele sind in Kategorien gruppiert und teilweise VIPs vorbehalten.
  */
 
-#if defined _uif_teleport_included
+#if defined _jebiga_teleport_included
     #endinput
 #endif
-#define _uif_teleport_included
+#define _jebiga_teleport_included
 
 #define TP_CAT_CITY             (0)
 #define TP_CAT_STUNT            (1)
@@ -71,7 +71,7 @@ static const gTeleports[][E_TELEPORT] =
     {"LV - Pyramidenspitze",        2001.0000,  1544.0000,   50.6000,   0.0000, 0, TP_CAT_STUNT,    VIP_NONE},
     {"Bergstrasse Norden",         -1600.0000,  1200.0000,   14.0000,   0.0000, 0, TP_CAT_STUNT,    VIP_NONE},
 
-    {"UIF Stuntpark (eigene Map)",  -950.0000,  1930.0000,  601.0000,   0.0000, 0, TP_CAT_STUNT,    VIP_NONE},
+    {"Jebiga Stuntpark (eigene Map)",  -950.0000,  1930.0000,  601.0000,   0.0000, 0, TP_CAT_STUNT,    VIP_NONE},
 
     // --- Fun & Party ---
     {"ZomboTech Labor",             1256.0000, -1400.0000,   13.5500,   0.0000, 0, TP_CAT_FUN,      VIP_NONE},

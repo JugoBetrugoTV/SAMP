@@ -1,15 +1,15 @@
 /*
- * UIF Freeroam - Haeuser
+ * Jebiga-Gaming - Haeuser
  *
  * Kaufbare Haeuser mit begehbaren Innenraeumen. Die Standorte stehen fest im
  * Skript, nur der Besitzer wird in scriptfiles/houses.ini gespeichert. Einige
  * Objekte sind VIPs vorbehalten.
  */
 
-#if defined _uif_house_included
+#if defined _jebiga_house_included
     #endinput
 #endif
-#define _uif_house_included
+#define _jebiga_house_included
 
 #define HOUSE_ENTER_RANGE       (2.5)
 

@@ -1,15 +1,15 @@
 /*
- * UIF Freeroam - Spielerdaten
+ * Jebiga-Gaming - Spielerdaten
  *
  * Zentrale Datenstruktur pro Spieler. Alles was gespeichert wird, steht im
  * oberen Block; der untere Block haelt reine Laufzeitwerte, die beim Verbinden
  * zurueckgesetzt werden.
  */
 
-#if defined _uif_player_included
+#if defined _jebiga_player_included
     #endinput
 #endif
-#define _uif_player_included
+#define _jebiga_player_included
 
 enum E_PLAYER
 {
@@ -31,6 +31,10 @@ enum E_PLAYER
     pDerbyWins,
     pHouse,                 // Index des eigenen Hauses, -1 = keins
     bool:pVehicleDamage,    // /vd - sichtbarer Fahrzeugschaden
+    pBank,                  // Guthaben auf dem Bankkonto
+    pJobsDone,              // abgeschlossene Jobrouten
+    pJobEarnings,           // insgesamt mit Jobs verdient
+    pAchievements,          // Bitmaske der freigeschalteten Erfolge
 
     // --- Laufzeitdaten ---
     bool:pRegistered,
@@ -81,6 +85,18 @@ enum E_PLAYER
     pDuelInviteFrom,        // offene Einladung, INVALID_PLAYER_ID = keine
     pDuelInviteWeapon,
 
+    // --- Jobs ---
+    pJob,                   // laufender Job, -1 = keiner
+    pJobStage,              // naechster anzufahrender Halt
+    pJobVehicle,
+
+    // --- Bank ---
+    pBankMinutes,           // Spielminuten seit der letzten Zinsgutschrift
+
+    // --- Innenraeume ---
+    bool:pInInterior,
+    Float:pIntReturnPos[3],
+
     // --- Crew ---
     pCrewName[24],          // gespeicherter Crewname ("" = keine Crew)
     pCrew,                  // zur Laufzeit aufgeloester Crewindex, -1 = keine
@@ -129,6 +145,8 @@ stock ResetPlayerData(playerid)
     PlayerData[playerid][pDuelInviteFrom] = INVALID_PLAYER_ID;
     PlayerData[playerid][pCrew]          = -1;
     PlayerData[playerid][pCrewInviteFrom] = -1;
+    PlayerData[playerid][pJob]           = -1;
+    PlayerData[playerid][pJobVehicle]    = INVALID_VEHICLE_ID;
     return 1;
 }
 

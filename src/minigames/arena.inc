@@ -1,5 +1,5 @@
 /*
- * UIF Freeroam - Deathmatch-Arenen und Duelle
+ * Jebiga-Gaming - Deathmatch-Arenen und Duelle
  *
  * Zwei verwandte Spielarten in einem Modul:
  *
@@ -15,10 +15,10 @@
  * sich nicht pruefen lassen.
  */
 
-#if defined _uif_arena_included
+#if defined _jebiga_arena_included
     #endinput
 #endif
-#define _uif_arena_included
+#define _jebiga_arena_included
 
 #define ARENA_WORLD_BASE        (800)   // 800 + Arenaindex
 #define ARENA_WEAPONS           (3)

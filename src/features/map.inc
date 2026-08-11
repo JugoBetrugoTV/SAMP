@@ -1,5 +1,5 @@
 /*
- * UIF Freeroam - Custom Map
+ * Jebiga-Gaming - Custom Map
  *
  * Eigene Bauwerke, die es in San Andreas nicht gibt: ein Stuntpark ueber der
  * Wueste, eine VIP-Lounge, eine Goldinsel und die Umrandung der Derby-Arena.
@@ -21,10 +21,10 @@
  * huebscher, haben aber unter Umstaenden keine Kollision.
  */
 
-#if defined _uif_map_included
+#if defined _jebiga_map_included
     #endinput
 #endif
-#define _uif_map_included
+#define _jebiga_map_included
 
 // --- Untergrund ------------------------------------------------------------
 #define MODEL_PLATFORM_BIG      (8472)   // VegasEroad094, 240 x 180, Oberkante +0.37
@@ -123,7 +123,7 @@ static Map_BarrierSquare(Float:cx, Float:cy, Float:z, Float:halfSize, world = -1
 // ---------------------------------------------------------------------------
 
 /*
- * UIF Stuntpark - eine schwebende Strassenplatte von 240 x 180 Metern mit
+ * Jebiga Stuntpark - eine schwebende Strassenplatte von 240 x 180 Metern mit
  * Looping, Rampen und Sprungschanzen. Bewusst ohne Gelaender: herunterfallen
  * gehoert zum Stunten dazu.
  */
@@ -168,7 +168,7 @@ static Map_BuildStuntPark()
         Map_Object(MODEL_CONE, cx + 9.0, cy - offset, g + LIFT_CONE);
     }
 
-    CreateDynamic3DTextLabel("{FFD700}UIF Stuntpark\n{FFFFFF}Looping, Schanzen, freier Fall\n{AFAFAF}Taste 2 gibt Schub",
+    CreateDynamic3DTextLabel("{FFD700}Jebiga Stuntpark\n{FFFFFF}Looping, Schanzen, freier Fall\n{AFAFAF}Taste 2 gibt Schub",
         COL_WHITE, cx, cy - 55.0, g + 2.0, 60.0);
 
     CreateDynamicMapIcon(cx, cy, g, 53, 0, -1, -1, -1, 400.0, MAPICON_GLOBAL);
@@ -264,7 +264,7 @@ CMD:stuntpark(playerid, params[])
 
     // Suedlich des grossen Loopings absetzen, mit Blick zur Anfahrt
     Teleport_Player(playerid, MAP_PARK_X, MAP_PARK_Y - 70.0, MAP_PARK_Z + 1.0, 0.0);
-    SendSuccess(playerid, "UIF Stuntpark - der Looping liegt genau vor dir.");
+    SendSuccess(playerid, "Jebiga Stuntpark - der Looping liegt genau vor dir.");
     return 1;
 }
 ALIAS:park(stuntpark)

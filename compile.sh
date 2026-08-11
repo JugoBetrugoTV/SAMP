@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# UIF Freeroam - Gamemode uebersetzen
+# Jebiga-Gaming - Gamemode uebersetzen
 #
 # Aufruf:  ./compile.sh [weitere pawncc-Optionen]
 #
@@ -8,8 +8,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TOOLCHAIN="$ROOT/.toolchain"
-SOURCE="$ROOT/gamemodes/uif.pwn"
-OUTPUT="$ROOT/gamemodes/uif.amx"
+SOURCE="$ROOT/gamemodes/jebiga.pwn"
+OUTPUT="$ROOT/gamemodes/jebiga.amx"
 
 if [ ! -x "$TOOLCHAIN/pawncc" ]; then
     echo "Der Pawn-Compiler fehlt. Bitte zuerst ./setup.sh ausfuehren." >&2

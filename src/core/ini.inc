@@ -1,5 +1,5 @@
 /*
- * UIF Freeroam - Minimaler INI-Speicher
+ * Jebiga-Gaming - Minimaler INI-Speicher
  *
  * Schlanker key=value Dateispeicher auf Basis der Pawn-Dateifunktionen. Damit
  * kommt der Server ohne MySQL-Plugin aus; Accounts, Bans und Haeuser liegen
@@ -10,10 +10,10 @@
  *            (schreibt die Datei jedes Mal komplett neu)
  */
 
-#if defined _uif_ini_included
+#if defined _jebiga_ini_included
     #endinput
 #endif
-#define _uif_ini_included
+#define _jebiga_ini_included
 
 #define INI_MAX_LINE            (192)
 

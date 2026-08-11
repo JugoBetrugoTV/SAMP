@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# UIF Freeroam - Einrichtung der Build-Umgebung
+# Jebiga-Gaming - Einrichtung der Build-Umgebung
 #
 # Holt die SA-MP-Standardincludes und baut den Pawn-Compiler aus den Quellen.
 # Beides landet in Verzeichnissen, die von Git ignoriert werden - im Repository
@@ -110,7 +110,7 @@ cat <<'EOF'
 
 Einrichtung abgeschlossen.
 
-  ./compile.sh        Gamemode uebersetzen  (-> gamemodes/uif.amx)
+  ./compile.sh        Gamemode uebersetzen  (-> gamemodes/jebiga.amx)
   ./run.sh            Server starten        (benoetigt das SA-MP-Serverpaket)
 
 Das SA-MP-Serverpaket (samp03svr) ist nicht Teil dieses Repositories und wird

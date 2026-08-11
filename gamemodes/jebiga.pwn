@@ -1,6 +1,6 @@
 /*
  * =============================================================================
- *  UIF - United Islands Freeroam
+ *  Jebiga-Gaming
  *  Ein Freeroam-Gamemode fuer SA-MP 0.3.7 / open.mp
  * =============================================================================
  *
@@ -27,6 +27,13 @@
 // schaetzt den Spitzenbedarf auf rund 8800 Zellen.
 #pragma dynamic 16384
 
+// --- Referenzdaten (erzeugt von tools/gen_data.py) --------------------------
+#include "src/data/skins.inc"
+#include "src/data/weapons.inc"
+#include "src/data/components.inc"
+#include "src/data/interiors.inc"
+#include "src/data/animations.inc"
+
 // --- Kern -------------------------------------------------------------------
 #include "src/core/config.inc"
 #include "src/core/macros.inc"
@@ -46,6 +53,12 @@
 #include "src/features/stunt.inc"
 #include "src/features/house.inc"
 #include "src/features/map.inc"
+#include "src/features/skinshop.inc"
+#include "src/features/tuning.inc"
+#include "src/features/interior.inc"
+#include "src/features/job.inc"
+#include "src/features/bank.inc"
+#include "src/features/achievement.inc"
 #include "src/features/extras.inc"
 #include "src/core/hud.inc"
 
@@ -100,6 +113,9 @@ public OnGameModeInit()
     Arena_OnGameModeInit();
     Stunt_OnGameModeInit();
     Crew_OnGameModeInit();
+    Tuning_OnGameModeInit();
+    Interior_OnGameModeInit();
+    Job_OnGameModeInit();
     Hud_OnGameModeInit();
 
     SetTimer("OnServerSecond", 1000, true);
@@ -165,6 +181,7 @@ public OnPlayerDisconnect(playerid, reason)
     Race_OnPlayerDisconnect(playerid);
     Derby_OnPlayerDisconnect(playerid);
     Arena_OnPlayerDisconnect(playerid);
+    Job_OnPlayerDisconnect(playerid);
     Vehicle_OnPlayerDisconnect(playerid);
     Stunt_OnPlayerDisconnect(playerid);
     Account_OnDisconnect(playerid);
@@ -315,6 +332,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if (Arena_OnDialogResponse(playerid, dialogid, response, listitem))     return 1;
     if (Crew_OnDialogResponse(playerid, dialogid, response, listitem))      return 1;
     if (Extras_OnDialogResponse(playerid, dialogid, response, listitem))    return 1;
+    if (Skin_OnDialogResponse(playerid, dialogid, response, listitem))      return 1;
+    if (Tuning_OnDialogResponse(playerid, dialogid, response, listitem))    return 1;
+    if (Interior_OnDialogResponse(playerid, dialogid, response, listitem))  return 1;
+    if (Job_OnDialogResponse(playerid, dialogid, response, listitem))       return 1;
     return 0;
 }
 
@@ -378,6 +399,13 @@ public OnPlayerCommandText(playerid, cmdtext[])
 public OnPlayerLoggedIn(playerid)
 {
     Crew_OnPlayerLogin(playerid);
+    Achievement_Check(playerid);
+    return 1;
+}
+
+public OnPlayerEnterCheckpoint(playerid)
+{
+    Job_OnPlayerEnterCheckpoint(playerid);
     return 1;
 }
 
@@ -389,6 +417,7 @@ public OnServerSecond()
     Admin_Tick();
     Vehicle_Tick();
     Boost_Tick();
+    Job_Tick();
     return 1;
 }
 
@@ -403,6 +432,7 @@ public OnServerMinute()
 
         // Regelmaessig speichern, damit ein Absturz keine Fortschritte kostet
         Account_Save(i);
+        Achievement_Check(i);
 
         // AFK-Erkennung
         if (!PlayerData[i][pAfk] && (now - PlayerData[i][pLastActivity]) >= AFK_THRESHOLD)
@@ -414,6 +444,7 @@ public OnServerMinute()
             SendClientMessageToAll(COL_GREY, msg);
         }
     }
+    Bank_Tick();
     Announce_Rotate();
     return 1;
 }

@@ -1,5 +1,5 @@
 /*
- * UIF Freeroam - Crews
+ * Jebiga-Gaming - Crews
  *
  * Spielergruppen mit Kuerzel, eigenem Chat und gemeinsamer Statistik.
  *
@@ -8,10 +8,10 @@
  * Beim Login wird er einmal in den Laufzeitindex aufgeloest.
  */
 
-#if defined _uif_crew_included
+#if defined _jebiga_crew_included
     #endinput
 #endif
-#define _uif_crew_included
+#define _jebiga_crew_included
 
 #define MAX_CREWS               (48)
 #define CREW_NAME_LEN           (24)
@@ -19,8 +19,6 @@
 #define CREW_CREATE_COST        (50000)
 #define CREW_MIN_TAG            (2)
 #define CREW_MIN_NAME           (3)
-
-#define PATH_CREWS              "crews.ini"
 
 enum E_CREW
 {
