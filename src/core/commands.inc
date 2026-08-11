@@ -16,7 +16,11 @@
 // ---------------------------------------------------------------------------
 static const gAnnouncements[][] =
 {
+    "Im Fahrzeug die Taste 2 spammen gibt Schub - alles dazu mit /boost.",
     "Tippe /tp fuer ueber 40 Teleportziele quer ueber San Andreas.",
+    "Der UIF Stuntpark hat einen echten Looping: /stuntpark",
+    "/dm fuehrt in die Deathmatch-Arenen, /duel fordert jemanden direkt heraus.",
+    "Eigene Crew gruenden und im Chat mit Kuerzel auftreten: /crew",
     "Mit /veh [Name] spawnst du jedes Fahrzeug - zum Beispiel /veh infernus.",
     "/race eroeffnet ein Rennen, /derby ein Autoderby. Mitmachen lohnt sich.",
     "Spruenge mit dem Fahrzeug geben Stuntpunkte. /stunt bringt dich zu den besten Rampen.",
@@ -54,22 +58,28 @@ CMD:help(playerid, params[])
         /tp  /ls  /sf  /lv  /a51  /chiliad  /zt  /stunt  /tpto [Spieler]\n\n");
 
     strcat(body, "{F1C40F}Fahrzeuge\n{FFFFFF}\
-        /veh [Name]  /dv  /fix  /flip  /nos  /color  /lock  /unlock  /vd\n\n");
+        /veh [Name]  /dv  /fix  /flip  /nos  /color  /lock  /unlock  /vd  /tune\n\
+        {2ECC71}Taste 2 im Fahrzeug gibt Schub - Details mit /boost\n\n");
 
     strcat(body, "{F1C40F}Waffen\n{FFFFFF}\
         /weapons  /gun [ID] [Munition]  /disarm\n\n");
 
     strcat(body, "{F1C40F}Minispiele\n{FFFFFF}\
-        /race  /join  /derby  /leave  /ramp  /delramp\n\n");
+        /race  /join  /derby  /leave  /ramp  /delramp\n\
+        /dm  /leavedm  /duel [Spieler]  /accept  /stuntpark\n\n");
 
     strcat(body, "{F1C40F}Haeuser\n{FFFFFF}\
         /houses  /buyhouse  /sellhouse  /enter  /exit  /myhouse\n\n");
+
+    strcat(body, "{F1C40F}Crew\n{FFFFFF}\
+        /crew  /crews  /createcrew  /invitecrew  /joincrew  /leavecrew  /c [Text]\n\n");
 
     strcat(body, "{F1C40F}Kommunikation\n{FFFFFF}\
         /pm [Spieler] [Text]  /r [Text]  /report  /v (VIP)\n\n");
 
     strcat(body, "{F1C40F}Sonstiges\n{FFFFFF}\
-        /stats  /players  /top  /pos  /kill  /afk  /rules  /credits  /vip\n\n");
+        /stats  /players  /top  /pos  /kill  /afk  /rules  /credits  /vip\n\
+        /anims  /stopanim  /rocket  /parachute  /eject  /skin  /pay\n\n");
 
     if (AdminLevel(playerid) > ADMIN_NONE)
     {
@@ -112,8 +122,8 @@ CMD:credits(playerid, params[])
     format(body, sizeof body,
         "%s%s\n%sVersion %s\n\n\
         %sGamemode:%s eigenstaendiger Freeroam-Modus fuer SA-MP 0.3.7 / open.mp\n\
-        %sPlugins:%s keine - Kommandoparser, Parameter-Parsing und Datenspeicher\n\
-        sind Teil des Projekts.\n\n\
+        %sPlugins:%s ausschliesslich Streamer (Incognito) fuer die Custom Map.\n\
+        Kommandoparser, Parameter-Parsing und Datenspeicher sind Teil des Projekts.\n\n\
         %sWebseite: %s\n%sDiscord: %s",
         EC_GOLD, SERVER_NAME, EC_GREY, SERVER_VERSION,
         EC_YELLOW, EC_WHITE,

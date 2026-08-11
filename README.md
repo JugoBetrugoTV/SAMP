@@ -5,9 +5,9 @@ Vorbild von [uifserver.net](https://uifserver.net) — Teleports quer über San 
 Fahrzeug- und Waffensets, Stuntwertung, Rennen, Derby, Häuser, ein gestuftes
 Adminsystem und VIP-Ränge.
 
-Der Gamemode kommt **ohne Plugins und ohne externe Includes** aus. Kommandoparser,
-Parameter-Parsing (sscanf-Ersatz) und Datenspeicher sind Teil des Projekts; benötigt
-wird ausschließlich `a_samp.inc`.
+Kommandoparser, Parameter-Parsing (sscanf-Ersatz) und Datenspeicher sind Teil des
+Projekts. Einziges Plugin ist der **Streamer** (Incognito) — er trägt die Custom Map
+und wird von `setup.sh` aus den Quellen gebaut.
 
 ---
 
@@ -15,6 +15,8 @@ wird ausschließlich `a_samp.inc`.
 
 - [Schnellstart](#schnellstart)
 - [Serverpaket besorgen](#serverpaket-besorgen)
+- [Speedboost auf Taste 2](#speedboost-auf-taste-2)
+- [Custom Map](#custom-map)
 - [Funktionsumfang](#funktionsumfang)
 - [Kommandoübersicht](#kommandoübersicht)
 - [Projektaufbau](#projektaufbau)
@@ -41,9 +43,19 @@ make compile
 make run
 ```
 
-`setup.sh` braucht `git`, `cmake`, `make` und `gcc`. Es legt den Compiler unter
-`.toolchain/` und die Includes unter `pawno/include/` ab — beides ist von Git
-ignoriert, im Repository liegt ausschließlich eigener Quellcode.
+`setup.sh` braucht `git`, `cmake`, `make`, `gcc` und eine **32-Bit-C++-Toolchain**
+für das Streamer-Plugin (SA-MP lädt nur 32-Bit-Plugins, auch auf 64-Bit-Systemen):
+
+```bash
+# Debian / Ubuntu
+apt-get install g++-multilib lib32stdc++-14-dev
+# Fedora
+dnf install glibc-devel.i686 libstdc++-devel.i686
+```
+
+Compiler landet unter `.toolchain/`, Includes unter `pawno/include/`, das gebaute
+`streamer.so` unter `plugins/` — alles von Git ignoriert. Im Repository liegt
+ausschließlich eigener Quellcode.
 
 ### Ersten Administrator einrichten
 
@@ -80,6 +92,71 @@ scriptfiles/
 ```
 
 `run.sh` erkennt beide Varianten automatisch.
+
+---
+
+## Speedboost auf Taste 2
+
+Das Markenzeichen von UIF: **im Fahrzeug die Taste 2 spammen gibt Schub.** Jeder
+Tastendruck setzt einen Impuls in Fahrtrichtung; schnelles Drücken verkettet die
+Impulse zu einer Beschleunigung.
+
+Technisch liegt das auf `KEY_SUBMISSION` — die Taste, auf der GTA San Andreas
+standardmäßig die „Sub-Mission" hat, also die 2 in der Zahlenreihe. Da
+`OnPlayerKeyStateChange` pro Tastendruck feuert, entsteht das Spam-Verhalten von
+selbst.
+
+Damit daraus kein Dauerflug wird, hängt der Schub an einem Energievorrat:
+
+| Größe | Wert | VIP |
+|---|---|---|
+| Vorrat | 100 | 100 |
+| Kosten je Schub | 8 | 8 |
+| Aufladung | 12/Sekunde | 18/Sekunde |
+| Schubkraft | 0,28 | 0,34 |
+| Mindestabstand | 110 ms | 110 ms |
+| Höchstgeschwindigkeit | ~305 km/h | ~305 km/h |
+
+Ergebnis: ein kurzer, heftiger Burst von rund zwölf Schüben, danach lädt der
+Vorrat nach — genau der Rhythmus, den man vom Original kennt. Der Boostbalken
+sitzt im HUD unter dem Tacho. Fluggeräte, Schienenfahrzeuge und ferngesteuerte
+Modelle sind ausgenommen, im Rennen ist der Boost deaktiviert (im Derby nicht —
+dort hat ihn jeder). `/boost` erklärt alles im Spiel.
+
+---
+
+## Custom Map
+
+Vier eigene Bauwerke, komplett über den Streamer erzeugt:
+
+| Ort | Inhalt |
+|---|---|
+| **UIF Stuntpark** (`/stuntpark`) | Schwebende Plattform von 240 × 180 m mit großem Looping, zweitem kleinen Looping, Sprungschanze mit Landerampe, Röhren- und Baumstammrampen, Schanzen im Karree |
+| **VIP-Lounge** | Plattform mit umlaufendem Geländer und Ausfahrschanzen |
+| **Gold-Insel** | Plattform über dem Meer, Gold-VIPs vorbehalten |
+| **Derby-Arena** | Quadratische Umrandung samt Hindernissen — nur in der Derby-Welt sichtbar, im Freeroam steht sie niemandem im Weg |
+
+### Wie die Objekte ausgewählt wurden
+
+Modell-IDs aus dem Gedächtnis zu raten führt zu unsichtbaren oder falschen
+Objekten. Stattdessen wurden die Modelle gegen die Objektdatenbank von GTA San
+Andreas geprüft — inklusive ihrer tatsächlichen Abmessungen und, wichtiger, der
+Lage des Modellursprungs.
+
+Beispiel `loopbig`: Die Geometrie reicht auf der Z-Achse von −11,57 bis +11,59,
+der Ursprung sitzt also mittig. Ein Looping, der auf dem Boden stehen soll, muss
+folglich um 11,57 angehoben werden. Genau dafür stehen die `LIFT_*`-Konstanten in
+`src/features/map.inc` — jedes Objekt sitzt damit sauber auf, statt halb im Boden
+zu stecken.
+
+Als Untergrund dienen **Straßenstücke** statt Bodenplatten: Straßen sind
+garantiert kollidierbar. Eine reine Bodenmarkierung mit null Höhe sähe zwar
+sauberer aus, ließe die Spieler aber womöglich hindurchfallen.
+
+Die Umrandungen sind **quadratisch, nicht rund**. Ein Kreis aus Absperrungen
+bräuchte pro Segment eine gedrehte Ausrichtung; da sich die Drehkonvention hier
+nicht im Spiel prüfen ließ, hätte ein Vorzeichenfehler die Wand zerlegt. Vier
+gerade Wände mit 0° und 90° sind eindeutig.
 
 ---
 
@@ -128,6 +205,29 @@ erhalten 25 % Bonus. `/ramp` setzt eine eigene Sprungrampe.
 Eingang. Ein Haus pro Spieler, Rückkauf zu 70 % des Kaufpreises. Besucher dürfen
 hinein, solange der Besitzer online ist. Manche Objekte sind VIPs vorbehalten.
 
+### Deathmatch und Duelle
+Fünf dauerhaft offene DM-Arenen (Steinbruch, Area 51, Chiliad, LS Stadion,
+Bayside), jede mit eigenem Waffenset und eigener virtueller Welt. Beitritt
+jederzeit über `/dm`, Tod führt zum Respawn in derselben Arena. Dazu 1-gegen-1-
+**Duelle** auf Einladung (`/duel`, `/accept`) mit frei wählbarer Waffe, eigenem
+Duellplatz und Preisgeld für den Sieger.
+
+### Crews
+Spielergruppen mit Kürzel, das in jeder Chatzeile erscheint, eigenem Crewchat
+(`/c`), Einladungen und Mitgliederliste. Gespeichert wird im Account der Crew*name*
+und nicht ihr Index — Indizes verschieben sich, wenn eine Crew aufgelöst wird, der
+Name bleibt stabil.
+
+### HUD
+Zwei Textdraws am unteren Bildschirmrand, sichtbar sobald man in einem Fahrzeug
+sitzt: Modellname und Geschwindigkeit in km/h, darunter der Boostvorrat als
+Balken. Aktualisiert wird nur, wer tatsächlich fährt.
+
+### Tuning, Animationen, Spaßbefehle
+Tuningmenü fürs aktuelle Fahrzeug (`/tune`) mit Nitro, Hydraulik, Felgen,
+Spoilern und Auspuffanlagen, zwölf Animationen (`/anims`) sowie `/rocket`,
+`/eject`, `/parachute` und `/jetpack`.
+
 ### Administration
 Fünf Stufen — Moderator, Admin, Senior Admin, Head Admin, Owner. Jede Stufe schaltet
 weitere Kommandos frei, gegen ranghöhere oder gleichrangige Teammitglieder kann
@@ -155,12 +255,16 @@ Team meldet statt selbst zu bestrafen.
 | Bereich | Kommandos |
 |---|---|
 | Teleport | `/tp` `/ls` `/sf` `/lv` `/a51` `/chiliad` `/zt` `/stunt` `/tpto` |
-| Fahrzeuge | `/veh` `/car` `/dv` `/fix` `/flip` `/nos` `/color` `/lock` `/unlock` `/vd` |
+| Fahrzeuge | `/veh` `/car` `/dv` `/fix` `/flip` `/nos` `/color` `/lock` `/unlock` `/vd` `/tune` |
 | Waffen | `/weapons` `/w` `/guns` `/gun` `/disarm` |
-| Minispiele | `/race` `/join` `/derby` `/leave` `/ramp` `/delramp` |
+| Boost | **Taste 2 im Fahrzeug** · `/boost` `/nitro` |
+| Minispiele | `/race` `/join` `/derby` `/leave` `/ramp` `/delramp` `/stuntpark` |
+| Deathmatch | `/dm` `/arena` `/leavedm` `/duel [Spieler]` `/accept` |
+| Crew | `/crew` `/crews` `/createcrew` `/invitecrew` `/joincrew` `/leavecrew` `/c` |
 | Häuser | `/houses` `/buyhouse` `/sellhouse` `/enter` `/exit` `/myhouse` |
 | Chat | `/pm` `/r` `/report` `/v` (VIP) |
 | Sonstiges | `/help` `/cmds` `/rules` `/credits` `/stats` `/players` `/top` `/pos` `/kill` `/afk` `/pay` `/skin` `/jailtime` `/vip` |
+| Spaß | `/anims` `/stopanim` `/rocket` `/eject` `/parachute` `/jetpack` |
 | VIP | `/vheal` `/vcolor` `/vjetpack` |
 
 ### Team
@@ -181,20 +285,25 @@ Team meldet statt selbst zu bestrafen.
 gamemodes/uif.pwn          Einstiegspunkt: alle SA-MP-Callbacks, Kommando-Dispatcher
 src/
   core/
-    config.inc             Serverkennung, Farben, Dialog-IDs, Konstanten
+    config.inc             Serverkennung, Farben, Dialog-IDs, Welten, Mapkoordinaten
     macros.inc             CMD:/ALIAS:-Makros, Parameter-Parser (sscanf-Ersatz)
     ini.inc                Schlanker key=value-Dateispeicher
     util.inc               Nachrichten, Spielersuche, Formatierung, Logging
     player.inc             Spielerdatenstruktur und Zugriffshelfer
     account.inc            Registrierung, Login, Speichern/Laden
     chat.inc               Hauptchat, Floodschutz, Werbefilter, PM, Kanäle
+    hud.inc                Tacho und Boostbalken als Player-Textdraws
     commands.inc           Hilfe, Statistiken, Spielerliste, Servertipps
   features/
     teleport.inc           Teleportziele, Kategoriemenü, Spawnpunkte
+    boost.inc              Speedboost auf Taste 2
     weapon.inc             Waffensets
     vehicle.inc            Statische und eigene Fahrzeuge, Modellnamen 400-611
     stunt.inc              Stuntwertung, Stuntzonen, Rampen
     house.inc              Kaufbare Häuser mit Innenräumen
+    map.inc                Custom Map: Stuntpark, Lounge, Insel, Arenawände
+    crew.inc               Crews mit Kürzel, Chat und Einladungen
+    extras.inc             Tuning, Animationen, Spaßbefehle
   admin/
     admin.inc              Teamstufen, Bans, Jail, Adminkommandos
     vip.inc                VIP-Stufen und Vorteile
@@ -202,6 +311,7 @@ src/
   minigames/
     race.inc               Rennen mit Checkpoints
     derby.inc              Derby-Arenen
+    arena.inc              Deathmatch-Arenen und 1-gegen-1-Duelle
 server.cfg                 Serverkonfiguration
 setup.sh compile.sh run.sh Build- und Startskripte
 Makefile                   Kurzbefehle
@@ -261,6 +371,18 @@ Zwei Eigenheiten des Pawn-Präprozessors, die im Code sichtbar sind: ein
 `require`-Aufruf muss **auf einer Zeile** stehen, und `ALIAS:` wird **ohne
 abschließendes Semikolon** geschrieben.
 
+### Einstiegspunkt beim Login
+
+Manche Module müssen beim Login etwas tun, werden aber erst nach dem
+Accountsystem eingebunden — das Crewmodul etwa löst dann den gespeicherten
+Crewnamen in seinen Laufzeitindex auf. Dafür gibt es einen eigenen Haken:
+`account.inc` deklariert `forward OnPlayerLoggedIn(playerid)` und ruft ihn nach
+erfolgreichem Login auf, definiert wird er im Hauptskript. So kann jedes Modul
+reagieren, ohne dass die Include-Reihenfolge umgestellt werden muss.
+
+Aus demselben Grund steht `crew.inc` **vor** `chat.inc`: die Chatzeile zeigt das
+Crewkürzel, also muss das Crewmodul zu diesem Zeitpunkt bereits bekannt sein.
+
 ---
 
 ## Datenspeicher
@@ -304,9 +426,13 @@ Die wichtigsten Stellschrauben:
 | `server.cfg` | Hostname, Port, Slots, **rcon_password** |
 | `src/core/config.inc` | Servername, Website, Farben, Spawnschutz, AFK-Schwelle |
 | `src/core/chat.inc` | Flood-Intervall, Automute-Dauer, Werbefilter-Domains |
+| `src/features/crew.inc` | Gründungskosten, maximale Crewzahl |
 | `src/admin/anticheat.inc` | Schwellwerte und Verwarnungslimit |
 | `src/features/stunt.inc` | Punkteformel und Absprung-/Landeschwellen |
 | `src/minigames/race.inc` | Lobbyzeit, Countdown, Zeitlimit, Preisgeld |
+| `src/features/boost.inc` | Schubkraft, Energiekosten, Aufladung, Tempolimit |
+| `src/features/map.inc` | Modell-IDs und Aufsetzhöhen der Custom Map |
+| `src/core/hud.inc` | Position und Aktualisierungsrate der Anzeigen |
 
 > **Vor dem ersten Betrieb:** `rcon_password` in `server.cfg` ändern. Der
 > Auslieferungswert ist ein Platzhalter, `run.sh` warnt beim Start davor.
@@ -320,9 +446,11 @@ Was geprüft ist und was nicht — damit klar ist, worauf man sich verlassen kan
 - **Übersetzt fehlerfrei** mit Pawn 3.10.10 (pawn-lang Community-Compiler, Tag
   `v3.10.10`) gegen pawn-lang/samp-stdlib, Commit `8ffb055`, mit den strengen
   Optionen `-d3 -;+ -(+`: **0 Fehler, 0 Warnungen.** Ergebnis:
-  `gamemodes/uif.amx`, rund 346 KB.
+  `gamemodes/uif.amx`, rund 435 KB.
 - Der Ablauf `setup.sh` → `compile.sh` wurde aus einem **komplett leeren Baum**
-  durchgespielt (ohne Toolchain, ohne Includes) und lief fehlerfrei durch.
+  durchgespielt — ohne Toolchain, ohne Includes, ohne Plugin. Alles wurde
+  geholt beziehungsweise gebaut, das Ergebnis ist ein `streamer.so` als
+  ELF-32-Bit-Shared-Object und ein übersetztes Gamemode.
 - Die Includes sind bewusst auf einen Commit des `master`-Zweigs gepinnt und
   nicht auf das Release `0.3.7-R2-2-1`. Das Release enthält die unveränderten
   Original-Includes von SA-MP; die deklarieren `print`/`printf` selbst — was mit
@@ -332,12 +460,34 @@ Was geprüft ist und was nicht — damit klar ist, worauf man sich verlassen kan
 - Der Stackbedarf wurde geprüft: der Compiler schätzt den Spitzenwert auf 8843
   Zellen, deshalb setzt das Hauptskript `#pragma dynamic 16384` statt der
   Standardgröße von 4096 Zellen.
-- **Nicht im Spiel getestet.** Die Serveranwendung ist proprietär und in der
-  Entwicklungsumgebung dieses Projekts nicht verfügbar gewesen, ein Laufzeittest
-  mit echten Clients steht also aus. Betroffen sind vor allem die
-  erfahrungsabhängigen Werte: Stuntschwellen, Anti-Cheat-Grenzen sowie einige
-  Teleport-, Haus- und Rennkoordinaten, die auf Kartenwissen beruhen und beim
-  ersten Durchlauf feinjustiert werden sollten.
-- Das Objektmodell der Sprungrampe (`STUNT_RAMP_OBJECT`, Modell 1655) ist eine
-  Konstante an einer Stelle — falls die Rampe im Spiel nicht passt, genügt es,
-  dort ein anderes Modell einzutragen.
+- Die Modell-IDs der Custom Map sind gegen die Objektdatenbank von GTA San
+  Andreas geprüft, inklusive Abmessungen und Ursprungslage. Sie sind damit
+  belegt und nicht geraten.
+
+### Nicht im Spiel getestet
+
+Die Serveranwendung ist proprietär und war während der Entwicklung über keinen
+erreichbaren Mirror zu bekommen. Ein Laufzeittest mit echten Clients steht also
+aus. Betroffen sind vor allem erfahrungsabhängige Werte, die beim ersten
+Durchlauf feinjustiert gehören:
+
+| Bereich | Was zu prüfen ist |
+|---|---|
+| Boost | Schubkraft und Aufladung — ob sich das Spammen so anfühlt wie im Original |
+| Custom Map | Ob die Plattformen tragen und die Rampen sauber aufsitzen |
+| Stunts | Absprung- und Landeschwellen der Flugphasenerkennung |
+| Anti-Cheat | Grenzwerte, damit ehrliche Spieler nicht auffallen |
+| Animationen | Die Namen stammen aus der GTA-Animationsbibliothek; nicht jeder Eintrag ließ sich gegenprüfen |
+
+Einzelne Werte hängen an genau einer Konstante und sind schnell korrigiert —
+etwa `MODEL_PLATFORM_BIG` in `map.inc`, falls eine Plattform nicht passt.
+
+### Bewusst nicht eingebaut
+
+- **sscanf2** wäre gegenüber dem eigenen Parameter-Parser reine Doppelung; zwei
+  Parser nebeneinander zu pflegen bringt nichts.
+- **crashdetect** wäre nützlich gewesen, hängt aber wie sscanf2 von
+  `Zeex/subhook` ab. Dieses Repository war aus der Entwicklungsumgebung heraus
+  nicht erreichbar, ein Build also nicht möglich. Wer es nachrüsten möchte:
+  bauen und in `server.cfg` bei `plugins` ergänzen — der Gamemode braucht dafür
+  keine Änderung.

@@ -16,7 +16,6 @@
 #define JAIL_Y                  (77.5000)
 #define JAIL_Z                  (1001.0000)
 #define JAIL_INTERIOR           (6)
-#define JAIL_WORLD              (7000)
 
 // ---------------------------------------------------------------------------
 // Bans
@@ -145,7 +144,7 @@ stock Admin_PutInJail(playerid)
 {
     SetPlayerPos(playerid, JAIL_X, JAIL_Y, JAIL_Z);
     SetPlayerInterior(playerid, JAIL_INTERIOR);
-    SetPlayerVirtualWorld(playerid, JAIL_WORLD);
+    SetPlayerVirtualWorld(playerid, WORLD_JAIL);
     ResetPlayerWeapons(playerid);
     SetCameraBehindPlayer(playerid);
     return 1;

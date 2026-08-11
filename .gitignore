@@ -9,6 +9,9 @@ pawno/include/*.inc
 gamemodes/*.amx
 filterscripts/*.amx
 
+# Plugins werden von setup.sh aus den Quellen gebaut
+plugins/*.so
+
 # --- Serverpaket (proprietaer, nicht Teil des Repositories) -----------------
 samp03svr
 omp-server
@@ -25,6 +28,7 @@ scriptfiles/logs/*
 !scriptfiles/logs/.gitkeep
 scriptfiles/bans.ini
 scriptfiles/houses.ini
+scriptfiles/crews.ini
 server_log.txt
 samp.ban
 crashinfo.txt

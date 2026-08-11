@@ -334,7 +334,7 @@ CMD:enter(playerid, params[])
     SetPlayerInterior(playerid, gHouses[index][hInterior]);
 
     // Eigener Virtual World je Haus, damit sich Innenraeume nicht ueberlagern
-    SetPlayerVirtualWorld(playerid, 100 + index);
+    SetPlayerVirtualWorld(playerid, WORLD_HOUSE_BASE + index);
     SetCameraBehindPlayer(playerid);
 
     new msg[96];
@@ -349,9 +349,9 @@ CMD:exit(playerid, params[])
     #pragma unused params
 
     new world = GetPlayerVirtualWorld(playerid);
-    require(world >= 100 && world < 100 + sizeof gHouses, "Du bist in keinem Haus.");
+    require(world >= WORLD_HOUSE_BASE && world < WORLD_HOUSE_BASE + sizeof gHouses, "Du bist in keinem Haus.");
 
-    new index = world - 100;
+    new index = world - WORLD_HOUSE_BASE;
 
     SetPlayerPos(playerid, gHouses[index][hX], gHouses[index][hY], gHouses[index][hZ] + 0.5);
     SetPlayerInterior(playerid, 0);

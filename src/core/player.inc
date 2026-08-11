@@ -58,6 +58,11 @@ enum E_PLAYER
     pLastUpdateTick,
     pWarnings,
 
+    // --- Speedboost ---
+    pBoostEnergy,           // 0..BOOST_MAX_ENERGY
+    pBoostLastTick,
+    pBoostCount,            // Schuebe der laufenden Sitzung (Statistik)
+
     // --- Stunts ---
     bool:pStuntInAir,
     pStuntStartTick,
@@ -69,7 +74,17 @@ enum E_PLAYER
     pRaceId,
     pRaceCheckpoint,
     pRaceStartTime,
-    pMinigameVehicle
+    pMinigameVehicle,
+    pArena,                 // Index der DM-Arena, -1 = keine
+    pArenaKills,
+    pDuelSlot,              // belegter Duellplatz, -1 = keiner
+    pDuelInviteFrom,        // offene Einladung, INVALID_PLAYER_ID = keine
+    pDuelInviteWeapon,
+
+    // --- Crew ---
+    pCrewName[24],          // gespeicherter Crewname ("" = keine Crew)
+    pCrew,                  // zur Laufzeit aufgeloester Crewindex, -1 = keine
+    pCrewInviteFrom
 };
 
 new PlayerData[MAX_PLAYERS][E_PLAYER];
@@ -109,6 +124,11 @@ stock ResetPlayerData(playerid)
     PlayerData[playerid][pRaceId]        = -1;
     PlayerData[playerid][pMinigameVehicle] = INVALID_VEHICLE_ID;
     PlayerData[playerid][pStuntObject]   = INVALID_OBJECT_ID;
+    PlayerData[playerid][pArena]         = -1;
+    PlayerData[playerid][pDuelSlot]      = -1;
+    PlayerData[playerid][pDuelInviteFrom] = INVALID_PLAYER_ID;
+    PlayerData[playerid][pCrew]          = -1;
+    PlayerData[playerid][pCrewInviteFrom] = -1;
     return 1;
 }
 

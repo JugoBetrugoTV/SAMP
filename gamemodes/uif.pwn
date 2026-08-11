@@ -18,6 +18,10 @@
 
 #include <a_samp>
 
+// Streamer (Incognito): haelt Objekte, Textlabels und Map-Icons jenseits der
+// festen SA-MP-Grenzen. Die Custom Map baut vollstaendig darauf auf.
+#include <streamer>
+
 // Die Dialogtexte arbeiten mit grossen lokalen Puffern (bis 2 KB). Der
 // Pawn-Standardstack von 4096 Zellen reicht dafuer nicht - der Compiler
 // schaetzt den Spitzenbedarf auf rund 8800 Zellen.
@@ -30,14 +34,20 @@
 #include "src/core/util.inc"
 #include "src/core/player.inc"
 #include "src/core/account.inc"
+// Crews stehen vor dem Chat, weil die Chatzeile das Crewkuerzel anzeigt.
+#include "src/features/crew.inc"
 #include "src/core/chat.inc"
 
 // --- Features ---------------------------------------------------------------
 #include "src/features/teleport.inc"
+#include "src/features/boost.inc"
 #include "src/features/weapon.inc"
 #include "src/features/vehicle.inc"
 #include "src/features/stunt.inc"
 #include "src/features/house.inc"
+#include "src/features/map.inc"
+#include "src/features/extras.inc"
+#include "src/core/hud.inc"
 
 // --- Team & Sicherheit ------------------------------------------------------
 #include "src/admin/admin.inc"
@@ -47,6 +57,7 @@
 // --- Minispiele -------------------------------------------------------------
 #include "src/minigames/race.inc"
 #include "src/minigames/derby.inc"
+#include "src/minigames/arena.inc"
 
 // --- Allgemeine Kommandos ---------------------------------------------------
 #include "src/core/commands.inc"
@@ -81,11 +92,15 @@ public OnGameModeInit()
     }
 
     Teleport_OnGameModeInit();
+    Map_OnGameModeInit();
     Vehicle_OnGameModeInit();
     House_OnGameModeInit();
     Race_OnGameModeInit();
     Derby_OnGameModeInit();
+    Arena_OnGameModeInit();
     Stunt_OnGameModeInit();
+    Crew_OnGameModeInit();
+    Hud_OnGameModeInit();
 
     SetTimer("OnServerSecond", 1000, true);
     SetTimer("OnServerMinute", 60000, true);
@@ -101,6 +116,7 @@ public OnGameModeExit()
         if (IsLoggedIn(i)) Account_Save(i);
     }
     House_SaveAll();
+    Crew_SaveAll();
     Log("Gamemode wird beendet - alle Daten gespeichert.");
     return 1;
 }
@@ -129,6 +145,8 @@ public OnPlayerConnect(playerid)
 
     Account_OnConnect(playerid);
     AntiCheat_OnPlayerConnect(playerid);
+    Boost_OnPlayerConnect(playerid);
+    Hud_OnPlayerConnect(playerid);
     return 1;
 }
 
@@ -146,6 +164,7 @@ public OnPlayerDisconnect(playerid, reason)
 
     Race_OnPlayerDisconnect(playerid);
     Derby_OnPlayerDisconnect(playerid);
+    Arena_OnPlayerDisconnect(playerid);
     Vehicle_OnPlayerDisconnect(playerid);
     Stunt_OnPlayerDisconnect(playerid);
     Account_OnDisconnect(playerid);
@@ -184,6 +203,7 @@ public OnPlayerSpawn(playerid)
     // Nach Jailstrafe oder Minispiel nicht in die Freiheit spawnen
     if (IsPlayerJailed(playerid))       { Admin_PutInJail(playerid); return 1; }
     if (Derby_IsParticipant(playerid))  { Derby_RespawnParticipant(playerid); return 1; }
+    if (Arena_OnPlayerSpawn(playerid))  return 1;
 
     Teleport_SpawnPlayer(playerid);
     AntiCheat_OnPlayerSpawn(playerid);
@@ -205,6 +225,7 @@ public OnPlayerDeath(playerid, killerid, reason)
 
     Race_OnPlayerDeath(playerid);
     Derby_OnPlayerDeath(playerid, killerid);
+    Arena_OnPlayerDeath(playerid, killerid);
     return 1;
 }
 
@@ -225,6 +246,7 @@ public OnPlayerUpdate(playerid)
 public OnPlayerStateChange(playerid, newstate, oldstate)
 {
     Vehicle_OnPlayerStateChange(playerid, newstate, oldstate);
+    Hud_OnPlayerStateChange(playerid, newstate);
     MarkActivity(playerid);
     return 1;
 }
@@ -232,6 +254,7 @@ public OnPlayerStateChange(playerid, newstate, oldstate)
 public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 {
     MarkActivity(playerid);
+    Boost_OnPlayerKeyStateChange(playerid, newkeys, oldkeys);
     Vehicle_OnPlayerKeyStateChange(playerid, newkeys, oldkeys);
     return 1;
 }
@@ -289,6 +312,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if (Vip_OnDialogResponse(playerid, dialogid, response, listitem))       return 1;
     if (Race_OnDialogResponse(playerid, dialogid, response, listitem))      return 1;
     if (Derby_OnDialogResponse(playerid, dialogid, response, listitem))     return 1;
+    if (Arena_OnDialogResponse(playerid, dialogid, response, listitem))     return 1;
+    if (Crew_OnDialogResponse(playerid, dialogid, response, listitem))      return 1;
+    if (Extras_OnDialogResponse(playerid, dialogid, response, listitem))    return 1;
     return 0;
 }
 
@@ -346,6 +372,15 @@ public OnPlayerCommandText(playerid, cmdtext[])
 // =============================================================================
 //  Timer
 // =============================================================================
+/*
+ * Wird vom Accountsystem nach erfolgreichem Login aufgerufen.
+ */
+public OnPlayerLoggedIn(playerid)
+{
+    Crew_OnPlayerLogin(playerid);
+    return 1;
+}
+
 forward OnServerSecond();
 public OnServerSecond()
 {
@@ -353,6 +388,7 @@ public OnServerSecond()
     Derby_Tick();
     Admin_Tick();
     Vehicle_Tick();
+    Boost_Tick();
     return 1;
 }
 

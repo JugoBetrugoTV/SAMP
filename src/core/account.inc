@@ -11,6 +11,13 @@
 #endif
 #define _uif_account_included
 
+/*
+ * Wird nach erfolgreichem Login ausgeloest. Die Definition steht im
+ * Hauptskript, damit auch Module reagieren koennen, die erst nach dem
+ * Accountsystem eingebunden werden.
+ */
+forward OnPlayerLoggedIn(playerid);
+
 stock Account_GetPath(playerid, dest[], len = sizeof dest)
 {
     new name[MAX_PLAYER_NAME + 1];
@@ -56,6 +63,7 @@ stock bool:Account_Load(playerid)
     INI_GetString(path, "Salt",     PlayerData[playerid][pSalt],     MAX_SALT_LEN);
     INI_GetString(path, "RegDate",  PlayerData[playerid][pRegDate],  24);
     INI_GetString(path, "LastIP",   PlayerData[playerid][pLastIP],   16);
+    INI_GetString(path, "Crew",     PlayerData[playerid][pCrewName],  24);
 
     PlayerData[playerid][pAdminLevel]    = INI_GetInt(path, "AdminLevel");
     PlayerData[playerid][pVipLevel]      = INI_GetInt(path, "VipLevel");
@@ -104,6 +112,7 @@ stock Account_Save(playerid)
     INI_WriteString("Salt",          PlayerData[playerid][pSalt]);
     INI_WriteString("RegDate",       PlayerData[playerid][pRegDate]);
     INI_WriteString("LastIP",        PlayerData[playerid][pLastIP]);
+    INI_WriteString("Crew",          PlayerData[playerid][pCrewName]);
     INI_WriteInt("AdminLevel",       PlayerData[playerid][pAdminLevel]);
     INI_WriteInt("VipLevel",         PlayerData[playerid][pVipLevel]);
     INI_WriteInt("Score",            PlayerData[playerid][pScore]);
@@ -276,6 +285,8 @@ stock Account_CompleteLogin(playerid)
 
     format(msg, sizeof msg, "%s hat den Server betreten.", GetName(playerid));
     SendClientMessageToAll(COL_GREY, msg);
+
+    OnPlayerLoggedIn(playerid);
 
     SetSpawnInfo(playerid, NO_TEAM, PlayerData[playerid][pSkin],
         1958.3783, 1343.1572, 15.3746, 270.1425, 0, 0, 0, 0, 0, 0);

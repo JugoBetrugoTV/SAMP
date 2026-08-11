@@ -78,6 +78,7 @@
 #define EC_ORANGE               "{E67E22}"
 #define EC_CYAN                 "{1ABC9C}"
 #define EC_GOLD                 "{FFD700}"
+#define EC_PURPLE               "{9B59B6}"
 
 // ---------------------------------------------------------------------------
 // Dateipfade (relativ zu scriptfiles/)
@@ -93,6 +94,36 @@
 #define MINIGAME_NONE           (0)
 #define MINIGAME_RACE           (1)
 #define MINIGAME_DERBY          (2)
+#define MINIGAME_DM             (3)
+#define MINIGAME_DUEL           (4)
+
+// ---------------------------------------------------------------------------
+// Virtuelle Welten
+//
+// Weltnummern sind serverweit eindeutig, damit sich Innenraeume, Arenen und
+// Duelle nicht gegenseitig sehen.
+// ---------------------------------------------------------------------------
+#define WORLD_MAIN              (0)
+#define WORLD_HOUSE_BASE        (100)   // 100 + Hausindex
+#define WORLD_DERBY             (500)
+#define WORLD_DUEL_BASE         (600)   // 600 + Duell-Slot
+#define WORLD_JAIL              (7000)
+
+// ---------------------------------------------------------------------------
+// Standorte der Custom Map
+//
+// Die Bauwerke entstehen zur Laufzeit in map.inc. Die Koordinaten stehen hier,
+// weil Teleporte, Stuntzonen und Minispiele sie ebenfalls brauchen.
+// ---------------------------------------------------------------------------
+#define MAP_PARK_X              (-950.0)
+#define MAP_PARK_Y              (2000.0)
+#define MAP_PARK_Z              (600.0)     // Oberkante der Plattform
+#define MAP_LOUNGE_X            (2000.0)
+#define MAP_LOUNGE_Y            (1500.0)
+#define MAP_LOUNGE_Z            (500.0)
+#define MAP_ISLAND_X            (-1000.0)
+#define MAP_ISLAND_Y            (-3000.0)
+#define MAP_ISLAND_Z            (10.0)
 
 // ---------------------------------------------------------------------------
 // Dialog-IDs
@@ -115,5 +146,10 @@ enum
     DIALOG_RACE_LIST,
     DIALOG_DERBY_LIST,
     DIALOG_STUNT_LIST,
-    DIALOG_TOP_LIST
+    DIALOG_TOP_LIST,
+    DIALOG_DM_LIST,
+    DIALOG_TUNING,
+    DIALOG_ANIM_LIST,
+    DIALOG_CREW_MENU,
+    DIALOG_CREW_LIST
 };

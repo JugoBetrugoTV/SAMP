@@ -15,7 +15,6 @@
 #define DERBY_COUNTDOWN         (5)
 #define DERBY_TIME_LIMIT        (420)
 #define DERBY_MIN_PLAYERS       (2)
-#define DERBY_WORLD             (500)
 #define DERBY_RADIUS            (35.0)
 #define DERBY_PRIZE_PER_PLAYER  (7500)
 
@@ -163,9 +162,9 @@ static Derby_Place(playerid, slot, total)
     }
 
     PlayerData[playerid][pMinigameVehicle] = vehicleid;
-    SetVehicleVirtualWorld(vehicleid, DERBY_WORLD);
+    SetVehicleVirtualWorld(vehicleid, WORLD_DERBY);
 
-    SetPlayerVirtualWorld(playerid, DERBY_WORLD);
+    SetPlayerVirtualWorld(playerid, WORLD_DERBY);
     SetPlayerPos(playerid, x, y, z + 0.5);
     PutPlayerInVehicle(playerid, vehicleid, 0);
     TogglePlayerControllable(playerid, false);
@@ -181,7 +180,7 @@ static Derby_Place(playerid, slot, total)
  */
 stock Derby_RespawnParticipant(playerid)
 {
-    SetPlayerVirtualWorld(playerid, DERBY_WORLD);
+    SetPlayerVirtualWorld(playerid, WORLD_DERBY);
     SetPlayerPos(playerid,
         gDerbyArenas[gDerbyArena][daX],
         gDerbyArenas[gDerbyArena][daY],
@@ -477,8 +476,16 @@ CMD:leave(playerid, params[])
         return 1;
     }
 
-    Derby_RemovePlayer(playerid);
-    SendInfo(playerid, "Du hast das Derby verlassen.");
-    Derby_CheckForWinner();
+    if (PlayerData[playerid][pMinigame] == MINIGAME_DERBY)
+    {
+        Derby_RemovePlayer(playerid);
+        SendInfo(playerid, "Du hast das Derby verlassen.");
+        Derby_CheckForWinner();
+        return 1;
+    }
+
+    // Arena und Duell liegen in arena.inc, das erst danach eingebunden wird.
+    // Deshalb uebernimmt dort ein eigenes Kommando; hier bleibt nur der Hinweis.
+    SendError(playerid, "Dieses Minispiel verlaesst du mit /leavedm.");
     return 1;
 }

@@ -71,12 +71,13 @@ static const gTeleports[][E_TELEPORT] =
     {"LV - Pyramidenspitze",        2001.0000,  1544.0000,   50.6000,   0.0000, 0, TP_CAT_STUNT,    VIP_NONE},
     {"Bergstrasse Norden",         -1600.0000,  1200.0000,   14.0000,   0.0000, 0, TP_CAT_STUNT,    VIP_NONE},
 
+    {"UIF Stuntpark (eigene Map)",  -950.0000,  1930.0000,  601.0000,   0.0000, 0, TP_CAT_STUNT,    VIP_NONE},
+
     // --- Fun & Party ---
     {"ZomboTech Labor",             1256.0000, -1400.0000,   13.5500,   0.0000, 0, TP_CAT_FUN,      VIP_NONE},
     {"Vergnuegungspark LS",         1961.0000, -1450.0000,   13.5500,  90.0000, 0, TP_CAT_FUN,      VIP_NONE},
     {"Riesenrad Santa Maria",        368.0000, -2032.0000,    7.8300, 180.0000, 0, TP_CAT_FUN,      VIP_NONE},
     {"Partyinsel",                  -1300.0000,  -300.0000,   14.1500,   0.0000, 0, TP_CAT_FUN,     VIP_NONE},
-    {"Rennstrecke LV",              -1400.0000,   -80.0000,   1050.0000, 0.0000, 0, TP_CAT_FUN,     VIP_NONE},
     {"Jizzy's Club",               -2624.0000,  1412.0000,    7.0900, 270.0000, 0, TP_CAT_FUN,      VIP_NONE},
     {"Bootshafen LS",                -83.0000, -1594.0000,    2.4500,   0.0000, 0, TP_CAT_FUN,      VIP_NONE},
 
@@ -87,9 +88,8 @@ static const gTeleports[][E_TELEPORT] =
     {"Verona Beach Militaerhafen",   -1655.0000,  -200.0000,  14.1500,   0.0000, 0, TP_CAT_MILITARY, VIP_NONE},
 
     // --- VIP-Bereiche ---
-    {"VIP-Lounge",                   2000.0000,  1500.0000,  500.0000,   0.0000, 0, TP_CAT_VIP,     VIP_BRONZE},
-    {"VIP-Stuntpark",                -900.0000,  2000.0000,  600.0000,   0.0000, 0, TP_CAT_VIP,     VIP_SILVER},
-    {"Gold-Insel",                   -1000.0000, -3000.0000,  10.0000,   0.0000, 0, TP_CAT_VIP,     VIP_GOLD}
+    {"VIP-Lounge",                   2000.0000,  1500.0000,  501.0000,   0.0000, 0, TP_CAT_VIP,     VIP_BRONZE},
+    {"Gold-Insel",                   -1000.0000, -3000.0000,  11.0000,   0.0000, 0, TP_CAT_VIP,     VIP_GOLD}
 };
 
 // Spawnpunkte, wenn ein Spieler regulaer spawnt

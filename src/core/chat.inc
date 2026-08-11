@@ -174,14 +174,16 @@ stock Chat_OnPlayerText(playerid, text[])
 
     MarkActivity(playerid);
 
-    new msg[160], prefix[32];
+    new msg[192], prefix[32], crewTag[24];
     prefix[0] = EOS;
 
     if (AdminLevel(playerid) > ADMIN_NONE)  format(prefix, sizeof prefix, "%s[Admin] ", EC_ORANGE);
     else if (IsVip(playerid))               format(prefix, sizeof prefix, "%s[VIP] ", EC_GOLD);
 
-    format(msg, sizeof msg, "%s%s(%d): %s%s",
-        prefix, GetName(playerid), playerid, EC_WHITE, text);
+    Crew_GetChatTag(playerid, crewTag, sizeof crewTag);
+
+    format(msg, sizeof msg, "%s%s%s(%d): %s%s",
+        prefix, crewTag, GetName(playerid), playerid, EC_WHITE, text);
     SendClientMessageToAll(GetPlayerRankColor(playerid), msg);
     return 0;
 }

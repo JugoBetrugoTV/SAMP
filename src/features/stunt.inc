@@ -31,6 +31,8 @@ enum E_STUNT_ZONE
 
 static const gStuntZones[][E_STUNT_ZONE] =
 {
+    {"UIF Stuntpark - Looping",       -950.0000,  1930.0000, 601.0000,   0.0000},
+    {"UIF Stuntpark - Sprungschanze", -1010.0000, 1960.0000, 601.0000,   0.0000},
     {"Mount Chiliad - Gipfelstart",  -2340.0000, -1600.0000, 483.7000, 180.0000},
     {"Chiliad - Steilhang",          -2263.0000, -1740.0000, 480.3000, 220.0000},
     {"Sherman-Staudamm",              -969.0000,  1966.0000,  60.4000,  90.0000},
