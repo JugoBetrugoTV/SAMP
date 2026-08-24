@@ -75,6 +75,25 @@ stock bool:Crew_IsLeader(playerid, index)
 // ---------------------------------------------------------------------------
 stock Crew_SaveAll()
 {
+    if (DB_IsActive())
+    {
+        new query[DB_MAX_QUERY];
+
+        // Aufgeloeste Crews muessen auch aus der Tabelle verschwinden
+        DB_QuerySync("DELETE FROM `crews`");
+
+        for (new i = 0; i < MAX_CREWS; i++)
+        {
+            if (!gCrews[i][cUsed]) continue;
+
+            mysql_format(DB_Handle(), query, sizeof query,
+                "REPLACE INTO `crews` (`slot`,`name`,`tag`,`leader`,`score`) VALUES (%d,'%e','%e','%e',%d)",
+                i, gCrews[i][cName], gCrews[i][cTag], gCrews[i][cLeader], gCrews[i][cScore]);
+            mysql_tquery(DB_Handle(), query);
+        }
+        return 1;
+    }
+
     if (!INI_Open(PATH_CREWS)) return 0;
 
     new key[24];
@@ -96,6 +115,39 @@ stock Crew_OnGameModeInit()
     for (new i = 0; i < MAX_CREWS; i++) gCrews[i][cUsed] = false;
 
     new loaded = 0;
+
+    if (DB_IsActive())
+    {
+        new Cache:result = mysql_query(DB_Handle(), "SELECT `slot`,`name`,`tag`,`leader`,`score` FROM `crews`");
+        if (result)
+        {
+            new rows;
+            cache_get_row_count(rows);
+
+            for (new r = 0; r < rows; r++)
+            {
+                new slot = -1;
+                cache_get_value_name_int(r, "slot", slot);
+                if (slot < 0 || slot >= MAX_CREWS) continue;
+
+                cache_get_value_name(r, "name",   gCrews[slot][cName],   CREW_NAME_LEN);
+                cache_get_value_name(r, "tag",    gCrews[slot][cTag],    CREW_TAG_LEN);
+                cache_get_value_name(r, "leader", gCrews[slot][cLeader], MAX_PLAYER_NAME + 1);
+                cache_get_value_name_int(r, "score", gCrews[slot][cScore]);
+
+                if (gCrews[slot][cName][0] == EOS) continue;
+                gCrews[slot][cUsed] = true;
+                loaded++;
+            }
+            cache_delete(result);
+        }
+
+        new dbMsg[64];
+        format(dbMsg, sizeof dbMsg, "%d Crews aus der Datenbank geladen.", loaded);
+        Log(dbMsg);
+        return loaded;
+    }
+
     if (fexist(PATH_CREWS))
     {
         new key[24];

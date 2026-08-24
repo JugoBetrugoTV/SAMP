@@ -54,6 +54,18 @@ stock Admin_AddBan(const name[], const reason[], const adminName[])
     new stamp[32];
     GetTimestamp(stamp, sizeof stamp);
 
+    if (DB_IsActive())
+    {
+        // REPLACE statt INSERT: ein erneuter Ban ersetzt den alten Eintrag,
+        // statt am eindeutigen Index auf `name` zu scheitern.
+        new query[DB_MAX_QUERY];
+        mysql_format(DB_Handle(), query, sizeof query,
+            "REPLACE INTO `bans` (`name`,`reason`,`admin`,`created`) VALUES ('%e','%e','%e','%e')",
+            key, reason, adminName, stamp);
+        mysql_tquery(DB_Handle(), query);
+        return 1;
+    }
+
     new line[256];
     format(line, sizeof line, "%s=%s | von %s | %s\r\n", key, reason, adminName, stamp);
 
@@ -71,10 +83,25 @@ stock Admin_AddBan(const name[], const reason[], const adminName[])
  */
 stock Admin_RemoveBan(const name[])
 {
-    if (!fexist(PATH_BANS)) return 0;
-
     new key[MAX_PLAYER_NAME + 1];
     Admin_BanKey(name, key, sizeof key);
+
+    if (DB_IsActive())
+    {
+        /*
+         * Synchron, weil der Aufrufer sofort wissen muss, ob ueberhaupt ein
+         * Ban vorlag - sonst kaeme die Rueckmeldung an den Admin ins Leere.
+         * Ein Entbannen pro Vorgang ist selten genug dafuer.
+         */
+        new query[DB_MAX_QUERY];
+        mysql_format(DB_Handle(), query, sizeof query,
+            "DELETE FROM `bans` WHERE `name` = '%e'", key);
+
+        if (!DB_QuerySync(query)) return 0;
+        return cache_affected_rows();
+    }
+
+    if (!fexist(PATH_BANS)) return 0;
 
     new File:source = fopen(PATH_BANS, io_read);
     if (!source) return 0;
@@ -119,13 +146,10 @@ stock Admin_RemoveBan(const name[])
 }
 
 /*
- * Prueft beim Verbinden, ob der Name gesperrt ist.
+ * Weist einen gebannten Spieler ab.
  */
-stock bool:Admin_OnPlayerConnect(playerid)
+static Admin_RejectBanned(playerid, const reason[])
 {
-    new reason[128];
-    if (!Admin_IsBanned(GetName(playerid), reason, sizeof reason)) return false;
-
     new msg[192];
     format(msg, sizeof msg, "Du bist von diesem Server gebannt. Grund: %s", reason);
     SendError(playerid, msg);
@@ -134,7 +158,62 @@ stock bool:Admin_OnPlayerConnect(playerid)
 
     format(msg, sizeof msg, "Gebannter Spieler %s hat versucht zu verbinden.", GetName(playerid));
     Log(msg);
-    return true;
+    return 1;
+}
+
+/*
+ * Ergebnis der Ban-Abfrage aus MySQL. Ist der Name sauber, geht es mit dem
+ * Laden des Accounts weiter.
+ */
+forward OnBanChecked(playerid);
+public OnBanChecked(playerid)
+{
+    if (!IsPlayerConnected(playerid)) return 0;
+
+    new rows;
+    cache_get_row_count(rows);
+
+    if (rows > 0)
+    {
+        new reason[128];
+        cache_get_value_name(0, "reason", reason, sizeof reason);
+        Admin_RejectBanned(playerid, reason);
+        return 1;
+    }
+
+    Account_OnConnect(playerid);
+    return 1;
+}
+
+/*
+ * Prueft beim Verbinden, ob der Name gesperrt ist, und stoesst danach das
+ * Laden des Accounts an.
+ *
+ * Der Ablauf ist zweistufig wie beim Account: bei MySQL kommt die Antwort
+ * erst im Callback, beim Dateispeicher sofort.
+ */
+stock Admin_BeginBanCheck(playerid)
+{
+    if (DB_IsActive())
+    {
+        new key[MAX_PLAYER_NAME + 1], query[DB_MAX_QUERY];
+        Admin_BanKey(GetName(playerid), key, sizeof key);
+
+        mysql_format(DB_Handle(), query, sizeof query,
+            "SELECT `reason` FROM `bans` WHERE `name` = '%e' LIMIT 1", key);
+        mysql_tquery(DB_Handle(), query, "OnBanChecked", "d", playerid);
+        return 1;
+    }
+
+    new reason[128];
+    if (Admin_IsBanned(GetName(playerid), reason, sizeof reason))
+    {
+        Admin_RejectBanned(playerid, reason);
+        return 1;
+    }
+
+    Account_OnConnect(playerid);
+    return 1;
 }
 
 // ---------------------------------------------------------------------------

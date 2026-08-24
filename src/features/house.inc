@@ -94,6 +94,32 @@ stock House_Load()
 {
     for (new i = 0; i < sizeof gHouses; i++) gHouseOwner[i][0] = EOS;
 
+    if (DB_IsActive())
+    {
+        /*
+         * Synchron: laeuft einmal beim Start, bevor Spieler verbunden sind.
+         * mysql_query liefert den Cache direkt zurueck, statt ihn wie tquery
+         * an einen Callback zu uebergeben.
+         */
+        new Cache:result = mysql_query(DB_Handle(), "SELECT `slot`,`owner` FROM `houses`");
+        if (!result) return 0;
+
+        new rows, loadedDb = 0;
+        cache_get_row_count(rows);
+
+        for (new r = 0; r < rows; r++)
+        {
+            new slot = -1;
+            cache_get_value_name_int(r, "slot", slot);
+            if (slot < 0 || slot >= sizeof gHouses) continue;
+
+            cache_get_value_name(r, "owner", gHouseOwner[slot], MAX_PLAYER_NAME + 1);
+            if (gHouseOwner[slot][0] != EOS) loadedDb++;
+        }
+        cache_delete(result);
+        return loadedDb;
+    }
+
     if (!fexist(PATH_HOUSES)) return 0;
 
     new key[16], loaded = 0;
@@ -111,6 +137,18 @@ stock House_Load()
 
 stock House_SaveAll()
 {
+    if (DB_IsActive())
+    {
+        new query[DB_MAX_QUERY];
+        for (new i = 0; i < sizeof gHouses; i++)
+        {
+            mysql_format(DB_Handle(), query, sizeof query,
+                "REPLACE INTO `houses` (`slot`,`owner`) VALUES (%d,'%e')", i, gHouseOwner[i]);
+            mysql_tquery(DB_Handle(), query);
+        }
+        return 1;
+    }
+
     if (!INI_Open(PATH_HOUSES)) return 0;
 
     new key[16];

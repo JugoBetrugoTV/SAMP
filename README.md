@@ -5,15 +5,19 @@ Vorbild von [jebiga-gaming.net](https://jebiga-gaming.net) — Teleports quer ü
 Fahrzeug- und Waffensets, Stuntwertung, Rennen, Derby, Häuser, ein gestuftes
 Adminsystem und VIP-Ränge.
 
-Kommandoparser, Parameter-Parsing (sscanf-Ersatz) und Datenspeicher sind Teil des
-Projekts. Einziges Plugin ist der **Streamer** (Incognito) — er trägt die Custom Map
-und wird von `setup.sh` aus den Quellen gebaut.
+Läuft unter **Linux und Windows**, wahlweise auf **MySQL** (Schema wird beim Start
+selbst angelegt) oder auf Textdateien. Kommandoparser und Parameter-Parsing sind
+Teil des Projekts; die Plugins baut `setup.sh` aus den Quellen.
 
 ---
 
 ## Inhalt
 
 - [Schnellstart](#schnellstart)
+- [Windows](#windows)
+- [MySQL](#mysql)
+- [Plugins](#plugins)
+- [Filterscripts](#filterscripts)
 - [Serverpaket besorgen](#serverpaket-besorgen)
 - [Speedboost auf Taste 2](#speedboost-auf-taste-2)
 - [Custom Map](#custom-map)
@@ -58,14 +62,146 @@ Compiler landet unter `.toolchain/`, Includes unter `pawno/include/`, das gebaut
 `streamer.so` unter `plugins/` — alles von Git ignoriert. Im Repository liegt
 ausschließlich eigener Quellcode.
 
+---
+
+## Windows
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup.ps1
+.\compile.bat
+.\run.bat
+```
+
+`setup.ps1` holt Compiler und Includes, legt die Laufzeitverzeichnisse an und
+stellt die Plugin-Endungen in `server.cfg` von `.so` auf `.dll` um.
+
+**Plugins baut das Windows-Skript nicht.** Unter Windows werden sie mit Visual
+Studio übersetzt, und für alle hier verwendeten gibt es fertige `.dll`-Dateien
+bei den jeweiligen Projekten. Nach `plugins\` gehören:
+
+| Datei | Notwendigkeit |
+|---|---|
+| `streamer.dll` | Pflicht — trägt die Custom Map |
+| `crashdetect.dll` | dringend empfohlen beim Einfahren |
+| `sscanf.dll` | optional |
+| `mysql.dll` | nur bei `Enabled=1` in `scriptfiles\mysql.ini` |
+
+Die Zeilenenden regelt `.gitattributes`: Shellskripte bekommen LF, Batch- und
+PowerShell-Dateien CRLF. Ohne das brechen `.sh`-Dateien unter Linux, sobald sie
+einmal über Windows gelaufen sind.
+
+---
+
+## MySQL
+
+Der Server läuft wahlweise auf MySQL oder auf den Textdateien in `scriptfiles/`.
+Beim ersten Start legt er `scriptfiles/mysql.ini` an:
+
+```ini
+Enabled=0
+Host=127.0.0.1
+User=jebiga
+Password=
+Database=jebiga
+Port=3306
+```
+
+`Enabled=1` setzen, Zugangsdaten eintragen, fertig — **eine leere Datenbank
+genügt.** Die Tabellen legt der Server beim Start selbst an
+(`CREATE TABLE IF NOT EXISTS`), von Hand einzuspielen ist nichts:
+
+| Tabelle | Inhalt |
+|---|---|
+| `accounts` | ein Datensatz je Spieler, `name` mit eindeutigem Index |
+| `bans` | namensbasierte Sperren mit Grund, Admin und Datum |
+| `houses` | Besitzer je Hausplatz |
+| `crews` | Name, Kürzel, Leitung, Punkte |
+
+Scheitert die Verbindung, **bricht der Start nicht ab** — der Server schreibt
+den Grund ins Log und läuft auf Dateien weiter. Ein Server ohne Datenbank ist
+besser als kein Server.
+
+### Synchron und asynchron
+
+Schemaanlage und das Laden von Häusern und Crews laufen **synchron**. Das
+blockiert, passiert aber genau einmal beim Hochfahren, bevor Spieler verbunden
+sind.
+
+Alles zur Laufzeit — Account laden, speichern, Bans schreiben — läuft
+**asynchron**. Bei 700 Spielern würde eine blockierende Abfrage sonst den
+gesamten Server anhalten.
+
+Der Unterschied ist nicht nur das Ziel, sondern der Ablauf: Dateien liest man
+sofort, MySQL antwortet erst später. Damit der Rest des Gamemodes davon nichts
+merkt, ist das Laden in beiden Fällen **zweistufig** modelliert —
+`Account_BeginLoad()` stößt an, `Account_AfterLoad()` macht weiter. Der
+Dateiweg ruft die zweite Stufe direkt auf, der MySQL-Weg aus dem
+Abfrage-Callback heraus. Die Ban-Prüfung beim Verbinden funktioniert genauso
+und stößt danach das Laden des Accounts an.
+
+---
+
+## Plugins
+
+| Plugin | Rolle | Von `setup.sh` gebaut |
+|---|---|---|
+| **streamer** (Incognito) | Objekte, Textlabels und Map-Icons jenseits der SA-MP-Grenzen — trägt die Custom Map | ja |
+| **crashdetect** (Fork von Y-Less) | zeigt bei Laufzeitfehlern Datei und Zeilennummer statt nur einer Speicheradresse | ja |
+| **sscanf2** (maddinat0r) | Parameterzerlegung; das Gamemode braucht sie nicht, eigene Filterscripts profitieren davon | ja |
+| **mysql** (pBlueG, R41-4) | optionaler Datenspeicher | nein, siehe unten |
+
+Alle drei gebauten Plugins entstehen als **32-Bit-Shared-Objects** — SA-MP lädt
+nur 32-Bit-Plugins, auch auf 64-Bit-Systemen.
+
+Zwei Eigenheiten, die `setup.sh` automatisch behandelt:
+
+- **subhook**: sscanf2 und crashdetect hängen davon ab. Das Originalrepository
+  von Zeex ist nicht mehr erreichbar, deshalb zeigt `setup.sh` die Submodule auf
+  den gepflegten Fork von Y-Less um.
+- **crashdetect und moderne Compiler**: der mitgelieferte AMX-Interpreter nutzt
+  „labels as values". Seit GCC 12 verlangt der Compiler dort einen echten
+  Zeigertyp, sonst bricht der Build mit *computed goto must be pointer type* ab.
+  `setup.sh` setzt den nötigen Cast.
+
+**Das MySQL-Plugin baut `setup.sh` nicht.** Es hängt an `log-core`, das
+wiederum `Zeex/cmake-modules` braucht — dasselbe unerreichbare Repository wie
+oben, hier ohne verfügbaren Fork. `setup.sh` erzeugt nur `a_mysql.inc`, damit
+das Gamemode übersetzt. Das Plugin selbst gibt es fertig gebaut für Linux und
+Windows beim Projekt pBlueG/SA-MP-MySQL; die Datei gehört nach `plugins/` und
+in die `plugins`-Zeile der `server.cfg`. Ohne das Plugin läuft der Server auf
+Dateien weiter.
+
+---
+
+## Filterscripts
+
+Vier eigenständige Skripte, unabhängig vom Gamemode. Sie lassen sich im
+laufenden Betrieb mit `/rcon reloadfs <name>` neu laden, ohne dass Spieler
+herausfliegen:
+
+| Filterscript | Was es tut |
+|---|---|
+| `gates` | Fünf automatische Tore, die sich öffnen, sobald jemand näher kommt. `/gates` zeigt den Zustand |
+| `lottery` | Ziehung alle 15 Minuten, `/lotto [Zahl]` kauft ein Los. Ohne Gewinner wächst der Topf weiter |
+| `weathercycle` | Uhrzeit läuft beschleunigt weiter, Wetter wechselt in unregelmäßigen Abständen. `/zeit` |
+| `speedcam` | Acht Radarfallen mit Kulanzgrenze, Sperrzeit und gedeckeltem Bußgeld. `/blitzer` |
+
+Eingetragen sind sie in `server.cfg` unter `filterscripts`.
+
+---
+
 ### Ersten Administrator einrichten
 
-Admin- und VIP-Ränge stehen in der jeweiligen Accountdatei. Nach der ersten
-Registrierung im Spiel:
+Nach der ersten Registrierung im Spiel — je nach Speicherweg:
 
 ```bash
-# Server stoppen, dann in scriptfiles/accounts/<name>.ini setzen:
+# Dateispeicher: Server stoppen, dann in scriptfiles/accounts/<name>.ini setzen
 AdminLevel=5
+```
+
+```sql
+-- MySQL: geht im laufenden Betrieb, wirkt beim naechsten Login
+UPDATE accounts SET adminlevel = 5 WHERE name = 'DeinName';
 ```
 
 Danach vergibt dieser Account weitere Ränge in-game per `/setlevel` und `/setvip`.
@@ -354,6 +490,7 @@ gamemodes/jebiga.pwn          Einstiegspunkt: alle SA-MP-Callbacks, Kommando-Dis
 src/
   core/
     config.inc             Serverkennung, Farben, Dialog-IDs, Welten, Mapkoordinaten
+    db.inc                 MySQL-Verbindung, Schemaanlage, Rückfall auf Dateien
     macros.inc             CMD:/ALIAS:-Makros, Parameter-Parser (sscanf-Ersatz)
     ini.inc                Schlanker key=value-Dateispeicher
     util.inc               Nachrichten, Spielersuche, Formatierung, Logging
@@ -392,7 +529,13 @@ src/
     race.inc               Rennen mit Checkpoints
     derby.inc              Derby-Arenen
     arena.inc              Deathmatch-Arenen und 1-gegen-1-Duelle
+filterscripts/
+  gates.pwn                Automatische Tore
+  lottery.pwn              Lotterie mit wachsendem Topf
+  weathercycle.pwn         Tages- und Wetterzyklus
+  speedcam.pwn             Radarfallen
 tools/gen_data.py          Generator für die Referenzdaten
+setup.ps1 compile.bat run.bat   Windows-Gegenstücke der Skripte
 server.cfg                 Serverkonfiguration
 setup.sh compile.sh run.sh Build- und Startskripte
 Makefile                   Kurzbefehle
@@ -470,6 +613,8 @@ Crewkürzel, also muss das Crewmodul zu diesem Zeitpunkt bereits bekannt sein.
 
 Kein MySQL-Plugin nötig — alles liegt als lesbare Textdatei unter `scriptfiles/`:
 
+Ohne MySQL liegt alles als lesbare Textdatei unter `scriptfiles/`:
+
 | Datei | Inhalt |
 |---|---|
 | `accounts/<name>.ini` | ein Account (Name kleingeschrieben) |
@@ -518,6 +663,8 @@ Die wichtigsten Stellschrauben:
 | `src/features/job.inc` | Routen, Lohn je Halt, Abschlussprämie |
 | `src/features/achievement.inc` | Ziele und Prämien |
 | `src/features/skinshop.inc` | Preis eines Skinwechsels |
+| `scriptfiles/mysql.ini` | Datenbankzugang, `Enabled` schaltet um |
+| `filterscripts/*.pwn` | Tore, Lottopreise, Wetterintervalle, Tempolimit |
 
 > **Vor dem ersten Betrieb:** `rcon_password` in `server.cfg` ändern. Der
 > Auslieferungswert ist ein Platzhalter, `run.sh` warnt beim Start davor.
@@ -530,62 +677,52 @@ Was geprüft ist und was nicht — damit klar ist, worauf man sich verlassen kan
 
 - **Übersetzt fehlerfrei** mit Pawn 3.10.10 (pawn-lang Community-Compiler, Tag
   `v3.10.10`) gegen pawn-lang/samp-stdlib, Commit `8ffb055`, mit den strengen
-  Optionen `-d3 -;+ -(+`: **0 Fehler, 0 Warnungen.**
+  Optionen `-d3 -;+ -(+`: **0 Fehler, 0 Warnungen** — Gamemode und alle vier
+  Filterscripts.
 - Der Ablauf `setup.sh` → `compile.sh` wurde aus einem **komplett leeren Baum**
-  durchgespielt — ohne Toolchain, ohne Includes, ohne Plugin. Alles wurde
-  geholt beziehungsweise gebaut, das Ergebnis ist ein `streamer.so` als
-  ELF-32-Bit-Shared-Object und ein übersetztes Gamemode.
-- **138 Kommandos, keine Namenskollisionen.** Der Dispatcher würde bei zwei
-  gleichnamigen Kommandos stillschweigend eines davon gewinnen lassen, deshalb
-  wird das geprüft.
-- Die Includes sind bewusst auf einen Commit des `master`-Zweigs gepinnt und
-  nicht auf das Release `0.3.7-R2-2-1`. Das Release enthält die unveränderten
-  Original-Includes von SA-MP; die deklarieren `print`/`printf` selbst — was mit
-  der `console.inc` des Pawn-Compilers kollidiert — und führen `SHA256_PassHash`
+  durchgespielt: Includes geholt, Compiler gebaut, drei Plugins gebaut, alles
+  übersetzt.
+- Die drei gebauten Plugins sind **ELF-32-Bit-Shared-Objects** — geprüft, nicht
+  angenommen. SA-MP lädt nichts anderes.
+- **Keine Namenskollisionen** unter den Kommandos. Der Dispatcher würde bei zwei
+  gleichnamigen Kommandos stillschweigend eines gewinnen lassen.
+- Die Includes sind auf einen Commit des `master`-Zweigs gepinnt, nicht auf das
+  Release `0.3.7-R2-2-1`: das Release deklariert `print`/`printf` selbst — was
+  mit der `console.inc` des Compilers kollidiert — und führt `SHA256_PassHash`
   ohne `const`-Parameter. Beides verhindert die Übersetzung.
-- Der Stackbedarf wurde geprüft: der Compiler schätzt den Spitzenwert auf 8843
-  Zellen, deshalb setzt das Hauptskript `#pragma dynamic 16384` statt der
-  Standardgröße von 4096 Zellen.
+- Der Stackbedarf wurde geprüft: der Compiler schätzt den Spitzenwert auf 9733
+  Zellen, deshalb `#pragma dynamic 16384` statt der Standardgröße von 4096.
 - Die Modell-IDs der Custom Map sind gegen die Objektdatenbank von GTA San
   Andreas geprüft, inklusive Abmessungen und Ursprungslage.
 - Die Referenzdaten sind aus der open.mp-Dokumentation erzeugt, nicht abgetippt.
-  Der Generator bricht ab, wenn die Skinliste Lücken hat.
+  Der Generator ist deterministisch und bricht ab, wenn die Skinliste Lücken hat.
 
-### Umfang
+### Nicht getestet
 
-| | Zeilen |
-|---|---|
-| Handgeschriebener Code (24 Module + Generator) | 9.751 |
-| Erzeugte Referenzdaten | 2.755 |
-| **Gesamt** | **12.506** |
-
-### Nicht im Spiel getestet
-
-Die Serveranwendung ist proprietär und war während der Entwicklung über keinen
-erreichbaren Mirror zu bekommen. Ein Laufzeittest mit echten Clients steht also
-aus. Betroffen sind vor allem erfahrungsabhängige Werte:
+**Der Server wurde nie gestartet.** Die Serveranwendung ist proprietär und war
+über keinen erreichbaren Mirror zu bekommen. Alles unten steht damit auf
+statischer Prüfung, nicht auf Beobachtung:
 
 | Bereich | Was zu prüfen ist |
 |---|---|
-| Boost | Schubkraft und Aufladung — ob sich das Spammen so anfühlt wie im Original |
+| MySQL | Der gesamte Datenbankweg ist ungetestet — kein Server, kein Plugin, keine Datenbank. Schema, Abfragen und der asynchrone Ablauf sind gegen die API von R41-4 geschrieben, aber nie ausgeführt worden. **Zuerst mit einer Wegwerfdatenbank ausprobieren.** |
+| Boost | Schubkraft und Aufladung — ob sich das Spammen richtig anfühlt |
 | Custom Map | Ob die Plattformen tragen und die Rampen sauber aufsitzen |
-| Stunts | Absprung- und Landeschwellen der Flugphasenerkennung |
+| Filterscripts | Torpositionen und -richtungen, Blitzerstandorte |
+| Stunts | Absprung- und Landeschwellen |
 | Anti-Cheat | Grenzwerte, damit ehrliche Spieler nicht auffallen |
 | Jobrouten | Ob die Wegpunkte mit den vorgesehenen Fahrzeugen erreichbar sind |
 | Animationen | Die Dokumentation weist selbst darauf hin, dass nicht jede gelistete Animation in SA-MP funktioniert |
+| Windows | `setup.ps1`, `compile.bat` und `run.bat` sind unter Linux geschrieben und dort nicht ausführbar. Die PowerShell-Fassung meidet bewusst Konstrukte, die es erst ab PowerShell 6 gibt, weil Windows 5.1 mitbringt |
 
 Einzelne Werte hängen an genau einer Konstante und sind schnell korrigiert —
 etwa `MODEL_PLATFORM_BIG` in `map.inc`, falls eine Plattform nicht passt.
 
 ### Bewusst nicht eingebaut
 
-- **sscanf2** wäre gegenüber dem eigenen Parameter-Parser reine Doppelung; zwei
-  Parser nebeneinander zu pflegen bringt nichts.
-- **crashdetect** wäre nützlich gewesen, hängt aber wie sscanf2 von
-  `Zeex/subhook` ab. Dieses Repository war aus der Entwicklungsumgebung heraus
-  nicht erreichbar, ein Build also nicht möglich. Wer es nachrüsten möchte:
-  bauen und in `server.cfg` bei `plugins` ergänzen — der Gamemode braucht dafür
-  keine Änderung.
+- **Das MySQL-Plugin-Binary** — die Abhängigkeitskette führt über `log-core` zu
+  `Zeex/cmake-modules`, das nicht erreichbar ist. Fertige Builds gibt es beim
+  Projekt selbst.
 - **Ortsanzeige im HUD** hätte die rund 360 Zonengrenzen von San Andreas
   gebraucht. Die stehen in keiner der geprüften Quellen, und geschätzte
   Rechtecke hätten dauerhaft falsche Ortsnamen angezeigt.

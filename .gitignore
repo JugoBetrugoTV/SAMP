@@ -11,10 +11,14 @@ filterscripts/*.amx
 
 # Plugins werden von setup.sh aus den Quellen gebaut
 plugins/*.so
+plugins/*.dll
 
 # --- Serverpaket (proprietaer, nicht Teil des Repositories) -----------------
 samp03svr
 omp-server
+samp-server.exe
+omp-server.exe
+*.exe
 announce
 samp-npc
 config.json
@@ -29,6 +33,7 @@ scriptfiles/logs/*
 scriptfiles/bans.ini
 scriptfiles/houses.ini
 scriptfiles/crews.ini
+scriptfiles/mysql.ini
 server_log.txt
 samp.ban
 crashinfo.txt

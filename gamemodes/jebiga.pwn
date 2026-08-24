@@ -22,6 +22,10 @@
 // festen SA-MP-Grenzen. Die Custom Map baut vollstaendig darauf auf.
 #include <streamer>
 
+// MySQL (pBlueG): optionaler Datenspeicher. Ist in scriptfiles/mysql.ini
+// nichts aktiviert, laeuft der Server unveraendert auf Dateien weiter.
+#include <a_mysql>
+
 // Die Dialogtexte arbeiten mit grossen lokalen Puffern (bis 2 KB). Der
 // Pawn-Standardstack von 4096 Zellen reicht dafuer nicht - der Compiler
 // schaetzt den Spitzenbedarf auf rund 8800 Zellen.
@@ -39,6 +43,7 @@
 #include "src/core/macros.inc"
 #include "src/core/ini.inc"
 #include "src/core/util.inc"
+#include "src/core/db.inc"
 #include "src/core/player.inc"
 #include "src/core/account.inc"
 // Crews stehen vor dem Chat, weil die Chatzeile das Crewkuerzel anzeigt.
@@ -104,6 +109,9 @@ public OnGameModeInit()
         AddPlayerClass(gSpawnSkins[i], 1958.3783, 1343.1572, 15.3746, 270.1425, 0, 0, 0, 0, 0, 0);
     }
 
+    // Vor allen Modulen, die Daten laden: entscheidet ueber MySQL oder Dateien
+    DB_Connect();
+
     Teleport_OnGameModeInit();
     Map_OnGameModeInit();
     Vehicle_OnGameModeInit();
@@ -133,6 +141,7 @@ public OnGameModeExit()
     }
     House_SaveAll();
     Crew_SaveAll();
+    DB_Close();
     Log("Gamemode wird beendet - alle Daten gespeichert.");
     return 1;
 }
@@ -143,9 +152,6 @@ public OnGameModeExit()
 public OnPlayerConnect(playerid)
 {
     ResetPlayerData(playerid);
-
-    // Gebannte Namen kommen gar nicht erst bis zum Login
-    if (Admin_OnPlayerConnect(playerid)) return 0;
 
     new msg[144];
     format(msg, sizeof msg, "%s%s%s (ID %d) verbindet sich...",
@@ -159,7 +165,9 @@ public OnPlayerConnect(playerid)
         EC_GREY, EC_CYAN, SERVER_WEBSITE, EC_GREY, EC_CYAN, SERVER_DISCORD);
     SendClientMessage(playerid, COL_WHITE, msg);
 
-    Account_OnConnect(playerid);
+    // Prueft erst den Ban und laedt danach den Account - beides je nach
+    // Speicherweg sofort oder ueber einen Abfrage-Callback.
+    Admin_BeginBanCheck(playerid);
     AntiCheat_OnPlayerConnect(playerid);
     Boost_OnPlayerConnect(playerid);
     Hud_OnPlayerConnect(playerid);

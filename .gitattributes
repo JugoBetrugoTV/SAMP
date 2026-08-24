@@ -1,0 +1,11 @@
+# Zeilenenden bewusst festlegen: Shellskripte brechen unter Linux mit CRLF,
+# Batchdateien brauchen unter Windows CRLF.
+* text=auto eol=lf
+
+*.bat   text eol=crlf
+*.ps1   text eol=crlf
+*.cfg   text eol=crlf
+
+*.amx   binary
+*.so    binary
+*.dll   binary
