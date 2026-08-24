@@ -39,6 +39,19 @@ stock INI_WriteString(const key[], const value[])
     return fwrite(gIniHandle, line);
 }
 
+/*
+ * Schreibt eine Zeile unveraendert - fuer Kommentare und Leerzeilen in
+ * Vorlagen. Beim Lesen werden Zeilen mit ; oder # ohnehin uebersprungen.
+ */
+stock INI_WriteRaw(const line[])
+{
+    if (!gIniHandle) return 0;
+
+    new buf[INI_MAX_LINE];
+    format(buf, sizeof buf, "%s\r\n", line);
+    return fwrite(gIniHandle, buf);
+}
+
 stock INI_WriteInt(const key[], value)
 {
     new buf[24];

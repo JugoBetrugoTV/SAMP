@@ -235,6 +235,7 @@ Write-Host @'
 Noch zu erledigen:
   1. Serverpaket besorgen (samp-server.exe bzw. omp-server.exe) - siehe README.
   2. rcon_password in server.cfg aendern.
-  3. MySQL nur, wenn gewuenscht: scriptfiles\mysql.ini auf Enabled=1 setzen
-     und mysql.dll nach plugins\ legen. Ohne das laeuft der Server auf Dateien.
+  3. MySQL nur, wenn gewuenscht: in scriptfiles\mysql.ini User und Passwort
+     eintragen und mysql.dll nach plugins\ legen. Datenbank und Tabellen legt
+     der Server selbst an. Ohne das laeuft der Server auf Dateien.
 '@

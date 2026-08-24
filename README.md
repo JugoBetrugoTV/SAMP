@@ -66,7 +66,7 @@ schlimmer als ein klarer Abbruch.
 | `streamer.dll` | **Pflicht** — ohne den Streamer fehlt die Custom Map |
 | `crashdetect.dll` | optional, aber beim Einfahren sehr zu empfehlen |
 | `sscanf.dll` | optional; das Gamemode braucht es nicht |
-| `mysql.dll` | nur bei `Enabled=1` in `scriptfiles\mysql.ini` |
+| `mysql.dll` | nur wenn in `scriptfiles\mysql.ini` ein `User` eingetragen ist |
 
 Fehlt ein optionales Plugin dauerhaft, muss es aus der `plugins`-Zeile in
 `server.cfg` gestrichen werden — sonst verweigert der Server den Start.
@@ -139,17 +139,51 @@ Der Server läuft wahlweise auf MySQL oder auf den Textdateien in `scriptfiles/`
 Beim ersten Start legt er `scriptfiles/mysql.ini` an:
 
 ```ini
-Enabled=0
-Host=127.0.0.1
-User=jebiga
+; Hier nur Benutzer und Passwort eintragen. Die Datenbank
+; und alle Tabellen legt der Server beim Start selbst an.
+
+User=
 Password=
-Database=jebiga
+
+; Ab hier nur aendern, wenn der Datenbankserver nicht auf
+; demselben Rechner laeuft oder anders heissen soll.
+Host=127.0.0.1
 Port=3306
+Database=jebiga
 ```
 
-`Enabled=1` setzen, Zugangsdaten eintragen, fertig — **eine leere Datenbank
-genügt.** Die Tabellen legt der Server beim Start selbst an
-(`CREATE TABLE IF NOT EXISTS`), von Hand einzuspielen ist nichts:
+**Einzutragen sind genau zwei Zeilen: `User` und `Password`.** Alles Weitere
+erledigt der Server beim Start — er legt die Datenbank an und darin die
+Tabellen. Vorbereiten muss man nichts, auch keine leere Datenbank.
+
+Es gibt keinen zweiten Schalter: **ein leerer `User` bedeutet „kein MySQL"**,
+ein eingetragener bedeutet „MySQL benutzen". Damit kann die Datei nicht in den
+Zustand geraten, in dem Zugangsdaten dastehen, aber trotzdem auf Dateien
+geschrieben wird.
+
+> Eine ältere `mysql.ini` mit einer `Enabled`-Zeile wird nicht mehr ausgewertet
+> — die Zeile ist wirkungslos, entscheidend ist allein `User`. Am einfachsten
+> ist es, die Datei zu löschen und vom Server neu anlegen zu lassen.
+
+### Was beim Start passiert
+
+1. Verbindung **mit** der Datenbank versuchen. Im laufenden Betrieb ist das der
+   einzige Schritt.
+2. Scheitert sie, **ohne** Datenbank anmelden und
+   `CREATE DATABASE IF NOT EXISTS` ausführen (`utf8mb4`).
+3. Verbindung schließen und **neu** aufbauen, diesmal mit der Datenbank.
+4. `CREATE TABLE IF NOT EXISTS` für alle Tabellen.
+
+Schritt 3 sieht nach einem Umweg aus, ist aber notwendig. Ein einfaches `USE`
+würde bei eingeschaltetem `AUTO_RECONNECT` verloren gehen: nach einem
+Verbindungsabriss stellt der Client den Zustand vom *Verbindungsaufbau* wieder
+her, nicht den später per `USE` gesetzten. Die Datenbank muss also an der
+Verbindung selbst hängen.
+
+Der Datenbankname wird vorher auf `A–Z`, `a–z`, `0–9` und `_` geprüft. Ein
+Bezeichner lässt sich in SQL weder als Parameter übergeben noch maskieren — er
+muss in die Abfrage geschrieben werden, also wird ein Name mit anderen Zeichen
+abgelehnt statt durchgereicht.
 
 | Tabelle | Inhalt |
 |---|---|
@@ -158,9 +192,18 @@ genügt.** Die Tabellen legt der Server beim Start selbst an
 | `houses` | Besitzer je Hausplatz |
 | `crews` | Name, Kürzel, Leitung, Punkte |
 
-Scheitert die Verbindung, **bricht der Start nicht ab** — der Server schreibt
-den Grund ins Log und läuft auf Dateien weiter. Ein Server ohne Datenbank ist
-besser als kein Server.
+Scheitert etwas davon, **bricht der Start nicht ab** — der Server schreibt den
+Grund ins Log und läuft auf Dateien weiter. Ein Server ohne Datenbank ist
+besser als kein Server. Im Log steht dabei, woran es lag: falsche Zugangsdaten,
+Datenbankserver nicht erreichbar, oder dem Benutzer fehlt das Recht `CREATE`.
+
+Das Recht `CREATE` braucht der Benutzer nur beim allerersten Start. Wer es
+nicht vergeben will, legt die Datenbank einmal von Hand an — dann greift
+Schritt 1 und Schritt 2 wird nie erreicht:
+
+```sql
+CREATE DATABASE jebiga CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+```
 
 ### Synchron und asynchron
 
@@ -704,7 +747,7 @@ Die wichtigsten Stellschrauben:
 | `src/features/job.inc` | Routen, Lohn je Halt, Abschlussprämie |
 | `src/features/achievement.inc` | Ziele und Prämien |
 | `src/features/skinshop.inc` | Preis eines Skinwechsels |
-| `scriptfiles/mysql.ini` | Datenbankzugang, `Enabled` schaltet um |
+| `scriptfiles/mysql.ini` | Datenbankzugang; leerer `User` schaltet MySQL ab |
 | `filterscripts/*.pwn` | Tore, Lottopreise, Wetterintervalle, Tempolimit |
 
 > **Vor dem ersten Betrieb:** `rcon_password` in `server.cfg` ändern. Der
