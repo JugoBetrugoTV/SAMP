@@ -5,16 +5,19 @@ Vorbild von [jebiga-gaming.net](https://jebiga-gaming.net) — Teleports quer ü
 Fahrzeug- und Waffensets, Stuntwertung, Rennen, Derby, Häuser, ein gestuftes
 Adminsystem und VIP-Ränge.
 
-Läuft unter **Linux und Windows**, wahlweise auf **MySQL** (Schema wird beim Start
-selbst angelegt) oder auf Textdateien. Kommandoparser und Parameter-Parsing sind
-Teil des Projekts; die Plugins baut `setup.sh` aus den Quellen.
+**Windows ist die Hauptplattform** — `setup.ps1` richtet alles mit einem Befehl
+ein. Linux läuft ebenso, dort werden die Plugins aus den Quellen gebaut statt
+geladen.
+
+Wahlweise auf **MySQL** (das Schema legt der Server beim Start selbst an) oder
+auf Textdateien. Kommandoparser und Parameter-Parsing sind Teil des Projekts.
 
 ---
 
 ## Inhalt
 
-- [Schnellstart](#schnellstart)
-- [Windows](#windows)
+- [Schnellstart (Windows)](#schnellstart-windows)
+- [Linux](#linux)
 - [MySQL](#mysql)
 - [Plugins](#plugins)
 - [Filterscripts](#filterscripts)
@@ -32,24 +35,63 @@ Teil des Projekts; die Plugins baut `setup.sh` aus den Quellen.
 
 ---
 
-## Schnellstart
+## Schnellstart (Windows)
 
-```bash
-./setup.sh      # SA-MP-Includes holen, Pawn-Compiler aus den Quellen bauen
-./compile.sh    # Gamemode übersetzen -> gamemodes/jebiga.amx
-./run.sh        # Server starten (Serverpaket erforderlich, siehe unten)
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup.ps1
+.\compile.bat
+.\run.bat
 ```
 
-Alternativ über `make`:
+`setup.ps1` holt alles: Pawn-Compiler, SA-MP-Includes, die Plugins samt
+passender Include-Dateien, `a_mysql.inc` und die Laufzeitverzeichnisse.
+Voraussetzung ist nur **git für Windows** und PowerShell — die mitgelieferte
+Version 5.1 genügt, das Skript meidet bewusst alles Neuere.
+
+Danach fehlen noch zwei Dinge:
+
+1. **Serverpaket** danebenlegen (`samp-server.exe` bzw. `omp-server.exe`) —
+   siehe [Serverpaket besorgen](#serverpaket-besorgen).
+2. **`rcon_password`** in `server.cfg` ändern.
+
+### Wenn ein Download nicht klappt
+
+Das Skript bricht dann **nicht** ab. Es merkt sich den Ausfall, macht weiter
+und sagt am Ende, welche Datei fehlt, wohin sie gehört und auf welcher
+Release-Seite sie liegt. Ein halb eingerichteter Baum ohne Hinweis wäre
+schlimmer als ein klarer Abbruch.
+
+| Datei | Rolle |
+|---|---|
+| `streamer.dll` | **Pflicht** — ohne den Streamer fehlt die Custom Map |
+| `crashdetect.dll` | optional, aber beim Einfahren sehr zu empfehlen |
+| `sscanf.dll` | optional; das Gamemode braucht es nicht |
+| `mysql.dll` | nur bei `Enabled=1` in `scriptfiles\mysql.ini` |
+
+Fehlt ein optionales Plugin dauerhaft, muss es aus der `plugins`-Zeile in
+`server.cfg` gestrichen werden — sonst verweigert der Server den Start.
+
+Aus jedem Plugin-Archiv übernimmt das Skript **auch die mitgelieferte
+`.inc`-Datei**, nicht nur die DLL. So passen Include und Binary immer
+zusammen; ein gemischtes Paar wäre die Art Fehler, die erst zur Laufzeit
+auffällt.
+
+---
+
+## Linux
 
 ```bash
-make setup
-make compile
-make run
+./setup.sh      # Includes holen, Compiler und Plugins aus den Quellen bauen
+./compile.sh    # Gamemode und Filterscripts übersetzen
+./run.sh        # Server starten
 ```
 
-`setup.sh` braucht `git`, `cmake`, `make`, `gcc` und eine **32-Bit-C++-Toolchain**
-für das Streamer-Plugin (SA-MP lädt nur 32-Bit-Plugins, auch auf 64-Bit-Systemen):
+Oder über `make setup`, `make compile`, `make run`.
+
+Unter Linux werden die Plugins **aus den Quellen gebaut** statt geladen. Dafür
+braucht `setup.sh` neben `git`, `cmake`, `make` und `gcc` eine
+**32-Bit-C++-Toolchain** — SA-MP lädt nur 32-Bit-Plugins, auch auf
+64-Bit-Systemen:
 
 ```bash
 # Debian / Ubuntu
@@ -58,37 +100,36 @@ apt-get install g++-multilib lib32stdc++-14-dev
 dnf install glibc-devel.i686 libstdc++-devel.i686
 ```
 
-Compiler landet unter `.toolchain/`, Includes unter `pawno/include/`, das gebaute
-`streamer.so` unter `plugins/` — alles von Git ignoriert. Im Repository liegt
-ausschließlich eigener Quellcode.
+`setup.sh` stellt außerdem die Plugin-Endungen in `server.cfg` von `.dll` auf
+`.so` um — ausgeliefert wird die Windows-Fassung.
 
----
+### Warum die Versionen sich unterscheiden
 
-## Windows
+Unter Windows kommt der Streamer als Release **v2.9.6**, unter Linux baut
+`setup.sh` den **master**-Zweig. Grund: v2.9.6 zieht seine Abhängigkeiten aus
+`Zeex/cmake-modules`, und dieses Repository ist nicht mehr erreichbar; der
+master-Zweig nutzt gepflegte Forks und lässt sich bauen.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\setup.ps1
-.\compile.bat
-.\run.bat
+Das ist unkritisch, weil jede Seite ihre **eigene passende `streamer.inc`**
+bekommt und das Gamemode nur seit Jahren stabile Natives benutzt
+(`CreateDynamicObject`, `CreateDynamic3DTextLabel`, `CreateDynamicMapIcon`).
+
+### Ersten Administrator einrichten
+
+Nach der ersten Registrierung im Spiel — je nach Speicherweg:
+
+```ini
+; Dateispeicher: Server stoppen, dann in scriptfiles/accounts/<name>.ini
+AdminLevel=5
 ```
 
-`setup.ps1` holt Compiler und Includes, legt die Laufzeitverzeichnisse an und
-stellt die Plugin-Endungen in `server.cfg` von `.so` auf `.dll` um.
+```sql
+-- MySQL: geht im laufenden Betrieb, wirkt beim naechsten Login
+UPDATE accounts SET adminlevel = 5 WHERE name = 'DeinName';
+```
 
-**Plugins baut das Windows-Skript nicht.** Unter Windows werden sie mit Visual
-Studio übersetzt, und für alle hier verwendeten gibt es fertige `.dll`-Dateien
-bei den jeweiligen Projekten. Nach `plugins\` gehören:
-
-| Datei | Notwendigkeit |
-|---|---|
-| `streamer.dll` | Pflicht — trägt die Custom Map |
-| `crashdetect.dll` | dringend empfohlen beim Einfahren |
-| `sscanf.dll` | optional |
-| `mysql.dll` | nur bei `Enabled=1` in `scriptfiles\mysql.ini` |
-
-Die Zeilenenden regelt `.gitattributes`: Shellskripte bekommen LF, Batch- und
-PowerShell-Dateien CRLF. Ohne das brechen `.sh`-Dateien unter Linux, sobald sie
-einmal über Windows gelaufen sind.
+Danach vergibt dieser Account weitere Ränge in-game per `/setlevel` und
+`/setvip`.
 
 ---
 
@@ -143,17 +184,17 @@ und stößt danach das Laden des Accounts an.
 
 ## Plugins
 
-| Plugin | Rolle | Von `setup.sh` gebaut |
-|---|---|---|
-| **streamer** (Incognito) | Objekte, Textlabels und Map-Icons jenseits der SA-MP-Grenzen — trägt die Custom Map | ja |
-| **crashdetect** (Fork von Y-Less) | zeigt bei Laufzeitfehlern Datei und Zeilennummer statt nur einer Speicheradresse | ja |
-| **sscanf2** (maddinat0r) | Parameterzerlegung; das Gamemode braucht sie nicht, eigene Filterscripts profitieren davon | ja |
-| **mysql** (pBlueG, R41-4) | optionaler Datenspeicher | nein, siehe unten |
+| Plugin | Rolle | Windows | Linux |
+|---|---|---|---|
+| **streamer** (Incognito) | Objekte, Textlabels und Map-Icons jenseits der SA-MP-Grenzen — trägt die Custom Map | Download v2.9.6 | Build aus master |
+| **crashdetect** (Zeex, Fork Y-Less) | zeigt bei Laufzeitfehlern Datei und Zeilennummer statt nur einer Speicheradresse | Download v4.22 | Build aus Fork |
+| **sscanf2** (maddinat0r) | Parameterzerlegung; das Gamemode braucht sie nicht, eigene Filterscripts profitieren davon | Download v2.13.8 | Build v2.13.8 |
+| **mysql** (pBlueG, R41-4) | optionaler Datenspeicher | Download | nicht baubar, siehe unten |
 
-Alle drei gebauten Plugins entstehen als **32-Bit-Shared-Objects** — SA-MP lädt
-nur 32-Bit-Plugins, auch auf 64-Bit-Systemen.
+Unter Linux entstehen die Plugins als **32-Bit-Shared-Objects** — SA-MP lädt nur
+32-Bit-Binaries, auch auf 64-Bit-Systemen.
 
-Zwei Eigenheiten, die `setup.sh` automatisch behandelt:
+Zwei Eigenheiten, die `setup.sh` beim Bauen unter Linux automatisch behandelt:
 
 - **subhook**: sscanf2 und crashdetect hängen davon ab. Das Originalrepository
   von Zeex ist nicht mehr erreichbar, deshalb zeigt `setup.sh` die Submodule auf
@@ -535,10 +576,10 @@ filterscripts/
   weathercycle.pwn         Tages- und Wetterzyklus
   speedcam.pwn             Radarfallen
 tools/gen_data.py          Generator für die Referenzdaten
-setup.ps1 compile.bat run.bat   Windows-Gegenstücke der Skripte
-server.cfg                 Serverkonfiguration
-setup.sh compile.sh run.sh Build- und Startskripte
-Makefile                   Kurzbefehle
+setup.ps1 compile.bat run.bat   Windows (Hauptplattform)
+setup.sh compile.sh run.sh      Linux
+server.cfg                 Serverkonfiguration (Windows-Fassung, .dll)
+Makefile                   Kurzbefehle unter Linux
 ```
 
 ---
@@ -673,56 +714,49 @@ Die wichtigsten Stellschrauben:
 
 ## Stand der Verifikation
 
-Was geprüft ist und was nicht — damit klar ist, worauf man sich verlassen kann:
+### Geprüft
 
-- **Übersetzt fehlerfrei** mit Pawn 3.10.10 (pawn-lang Community-Compiler, Tag
-  `v3.10.10`) gegen pawn-lang/samp-stdlib, Commit `8ffb055`, mit den strengen
-  Optionen `-d3 -;+ -(+`: **0 Fehler, 0 Warnungen** — Gamemode und alle vier
-  Filterscripts.
-- Der Ablauf `setup.sh` → `compile.sh` wurde aus einem **komplett leeren Baum**
-  durchgespielt: Includes geholt, Compiler gebaut, drei Plugins gebaut, alles
-  übersetzt.
-- Die drei gebauten Plugins sind **ELF-32-Bit-Shared-Objects** — geprüft, nicht
-  angenommen. SA-MP lädt nichts anderes.
-- **Keine Namenskollisionen** unter den Kommandos. Der Dispatcher würde bei zwei
-  gleichnamigen Kommandos stillschweigend eines gewinnen lassen.
-- Die Includes sind auf einen Commit des `master`-Zweigs gepinnt, nicht auf das
-  Release `0.3.7-R2-2-1`: das Release deklariert `print`/`printf` selbst — was
-  mit der `console.inc` des Compilers kollidiert — und führt `SHA256_PassHash`
-  ohne `const`-Parameter. Beides verhindert die Übersetzung.
-- Der Stackbedarf wurde geprüft: der Compiler schätzt den Spitzenwert auf 9733
-  Zellen, deshalb `#pragma dynamic 16384` statt der Standardgröße von 4096.
+- **Übersetzt fehlerfrei** mit Pawn 3.10.10 gegen pawn-lang/samp-stdlib, Commit
+  `8ffb055`, mit den strengen Optionen `-d3 -;+ -(+`: **0 Fehler, 0 Warnungen** —
+  Gamemode und alle vier Filterscripts.
+- Der Linux-Ablauf `setup.sh` → `compile.sh` wurde aus einem **komplett leeren
+  Baum** durchgespielt: Includes geholt, Compiler gebaut, drei Plugins gebaut,
+  `server.cfg` von `.dll` auf `.so` umgestellt, alles übersetzt.
+- Die drei unter Linux gebauten Plugins sind **ELF-32-Bit-Shared-Objects** —
+  geprüft, nicht angenommen.
+- **Keine Namenskollisionen** unter den 138 Kommandos.
+- Die Versionsnummern der Plugins stammen aus den **echten Release-Tags** der
+  jeweiligen Repositories, nicht aus dem Gedächtnis.
 - Die Modell-IDs der Custom Map sind gegen die Objektdatenbank von GTA San
   Andreas geprüft, inklusive Abmessungen und Ursprungslage.
 - Die Referenzdaten sind aus der open.mp-Dokumentation erzeugt, nicht abgetippt.
-  Der Generator ist deterministisch und bricht ab, wenn die Skinliste Lücken hat.
+  Der Generator ist deterministisch und bricht bei Lücken ab.
+- Der Stackbedarf wurde geprüft: Spitzenwert 9733 Zellen, deshalb
+  `#pragma dynamic 16384` statt der Standardgröße von 4096.
 
-### Nicht getestet
+### Nicht geprüft
 
-**Der Server wurde nie gestartet.** Die Serveranwendung ist proprietär und war
-über keinen erreichbaren Mirror zu bekommen. Alles unten steht damit auf
-statischer Prüfung, nicht auf Beobachtung:
+**Der Server wurde nie gestartet** und **die Windows-Skripte nie ausgeführt.**
+Die Entwicklung lief auf Linux; die Serveranwendung ist proprietär und war über
+keinen erreichbaren Mirror zu bekommen.
 
 | Bereich | Was zu prüfen ist |
 |---|---|
-| MySQL | Der gesamte Datenbankweg ist ungetestet — kein Server, kein Plugin, keine Datenbank. Schema, Abfragen und der asynchrone Ablauf sind gegen die API von R41-4 geschrieben, aber nie ausgeführt worden. **Zuerst mit einer Wegwerfdatenbank ausprobieren.** |
+| **Plugin-Downloads in `setup.ps1`** | Die Adressen der Release-Archive ließen sich aus der Entwicklungsumgebung nicht abrufen — GitHub-Releases waren dort gesperrt. Die Versionen stimmen, die Dateinamen der Archive folgen der üblichen Benennung, sind aber ungeprüft. Läuft ein Download ins Leere, nennt das Skript die Release-Seite und macht weiter |
+| **MySQL** | Der gesamte Datenbankweg ist ungetestet — kein Server, kein Plugin, keine Datenbank. Schema und Abfragen sind gegen die API von R41-4 geschrieben, aber nie ausgeführt. **Zuerst mit einer Wegwerfdatenbank ausprobieren** |
+| `setup.ps1`, `compile.bat`, `run.bat` | unter Linux geschrieben, dort nicht ausführbar. Die Batchdatei quotet `-;+` und `-(+`, weil `;` und `(` für die Eingabeaufforderung Trennzeichen sind; die PowerShell-Fassung meidet alles, was es erst ab Version 6 gibt |
 | Boost | Schubkraft und Aufladung — ob sich das Spammen richtig anfühlt |
 | Custom Map | Ob die Plattformen tragen und die Rampen sauber aufsitzen |
 | Filterscripts | Torpositionen und -richtungen, Blitzerstandorte |
-| Stunts | Absprung- und Landeschwellen |
-| Anti-Cheat | Grenzwerte, damit ehrliche Spieler nicht auffallen |
+| Stunts, Anti-Cheat | Schwellenwerte |
 | Jobrouten | Ob die Wegpunkte mit den vorgesehenen Fahrzeugen erreichbar sind |
 | Animationen | Die Dokumentation weist selbst darauf hin, dass nicht jede gelistete Animation in SA-MP funktioniert |
-| Windows | `setup.ps1`, `compile.bat` und `run.bat` sind unter Linux geschrieben und dort nicht ausführbar. Die PowerShell-Fassung meidet bewusst Konstrukte, die es erst ab PowerShell 6 gibt, weil Windows 5.1 mitbringt |
-
-Einzelne Werte hängen an genau einer Konstante und sind schnell korrigiert —
-etwa `MODEL_PLATFORM_BIG` in `map.inc`, falls eine Plattform nicht passt.
 
 ### Bewusst nicht eingebaut
 
-- **Das MySQL-Plugin-Binary** — die Abhängigkeitskette führt über `log-core` zu
-  `Zeex/cmake-modules`, das nicht erreichbar ist. Fertige Builds gibt es beim
-  Projekt selbst.
+- **Das MySQL-Plugin-Binary für Linux** — die Abhängigkeitskette führt über
+  `log-core` zu `Zeex/cmake-modules`, das nicht erreichbar ist. Für Windows
+  lädt `setup.ps1` das fertige Archiv.
 - **Ortsanzeige im HUD** hätte die rund 360 Zonengrenzen von San Andreas
   gebraucht. Die stehen in keiner der geprüften Quellen, und geschätzte
   Rechtecke hätten dauerhaft falsche Ortsnamen angezeigt.

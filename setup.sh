@@ -211,6 +211,14 @@ else
     log "a_mysql.inc erzeugt. Das Plugin selbst muss separat bereitgestellt werden - siehe README."
 fi
 
+# --- server.cfg auf Linux umstellen -----------------------------------------
+#
+# Ausgeliefert wird die Windows-Fassung; unter Linux heissen die Plugins .so.
+if [ -f "$ROOT/server.cfg" ] && grep -q '^plugins .*\.dll' "$ROOT/server.cfg"; then
+    log "Stelle die Plugin-Endungen in server.cfg auf .so um..."
+    sed -i '/^plugins /s/\.dll/.so/g' "$ROOT/server.cfg"
+fi
+
 # --- Laufzeitverzeichnisse --------------------------------------------------
 mkdir -p "$ROOT/scriptfiles/accounts" "$ROOT/scriptfiles/logs"
 
